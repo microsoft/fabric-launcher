@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+
+name = "fabric-launcher"
+version = "0.1.0"
+description = "A simple hello world package"
+readme = "README.md"
+authors = [
+    {name = "Slava Trofimov", email = "Slava.Trofimov@microsoft.com"},
+    {name = "Tonio Lora", email = "Tonio.Lora@microsoft.com"}
+]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.7"
+
+[project.scripts]
+fabric-launcher = "fabric_launcher:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fabric_launcher*"]
