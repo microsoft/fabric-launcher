@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 
 name = "fabric-launcher"
-version = "0.1.0"
+version = "0.1.1"
 description = "A simple hello world package"
 readme = "README.md"
 authors = [
