@@ -7,7 +7,7 @@ Supports copying files from local repository folders to Lakehouse.
 
 import os
 import shutil
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 class LakehouseFileManager:
@@ -32,7 +32,7 @@ class LakehouseFileManager:
         lakehouse_name: str,
         source_directory: str,
         target_folder: str = "data",
-        file_patterns: Optional[List[str]] = None,
+        file_patterns: Optional[list[str]] = None,
     ) -> None:
         """
         Upload files from a local directory to a Lakehouse Files folder.
@@ -63,7 +63,7 @@ class LakehouseFileManager:
 
             # Upload files
             uploaded_count = 0
-            for root, dirs, files in os.walk(source_directory):
+            for root, _dirs, files in os.walk(source_directory):
                 for file in files:
                     # Check if file matches any pattern (if patterns specified)
                     if file_patterns:
@@ -128,7 +128,7 @@ class LakehouseFileManager:
         lakehouse_name: str,
         source_folder: str,
         target_folder: str = "data",
-        file_patterns: Optional[List[str]] = None,
+        file_patterns: Optional[list[str]] = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -167,7 +167,7 @@ class LakehouseFileManager:
 
             if recursive:
                 # Walk through all subdirectories
-                for root, dirs, files in os.walk(source_folder):
+                for root, _dirs, files in os.walk(source_folder):
                     # Calculate relative path from source folder
                     rel_path = os.path.relpath(root, source_folder)
 
@@ -225,8 +225,8 @@ class LakehouseFileManager:
     def copy_multiple_folders_to_lakehouse(
         self,
         lakehouse_name: str,
-        folder_mappings: Dict[str, str],
-        file_patterns: Optional[List[str]] = None,
+        folder_mappings: dict[str, str],
+        file_patterns: Optional[list[str]] = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -270,8 +270,8 @@ class LakehouseFileManager:
         lakehouse_name: str,
         github_downloader,
         repository_base_path: str,
-        folder_mappings: Dict[str, str],
-        file_patterns: Optional[List[str]] = None,
+        folder_mappings: dict[str, str],
+        file_patterns: Optional[list[str]] = None,
         recursive: bool = True,
     ) -> None:
         """

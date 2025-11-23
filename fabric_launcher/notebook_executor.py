@@ -4,7 +4,7 @@ Notebook Executor Module
 This module provides functionality to trigger execution of Fabric notebooks.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import sempy.fabric as fabric
 
@@ -32,9 +32,9 @@ class NotebookExecutor:
         self,
         notebook_name: str,
         workspace_id: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[dict[str, Any]] = None,
         timeout_seconds: int = 3600,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Trigger execution of a Fabric notebook.
 
@@ -93,8 +93,8 @@ class NotebookExecutor:
             raise
 
     def run_notebook_synchronous(
-        self, notebook_path: str, parameters: Optional[Dict[str, Any]] = None, timeout_seconds: int = 3600
-    ) -> Dict[str, Any]:
+        self, notebook_path: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
+    ) -> dict[str, Any]:
         """
         Run a notebook synchronously using notebookutils (blocks until completion).
 
@@ -126,7 +126,7 @@ class NotebookExecutor:
             print(f"❌ Error running notebook: {e}")
             raise
 
-    def get_job_status(self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_job_status(self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None) -> dict[str, Any]:
         """
         Get the status of a notebook job.
 

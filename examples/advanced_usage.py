@@ -167,11 +167,11 @@ def example_multi_environment_config():
       repo_name: my-solution
       branch: main
       workspace_folder: workspace
-    
+
     deployment:
       validate_after_deployment: true
       max_retries: 3
-    
+
     data:
       lakehouse_name: DataLH
       folder_mappings:
@@ -180,20 +180,20 @@ def example_multi_environment_config():
       file_patterns:
         - "*.json"
         - "*.csv"
-    
+
     environments:
       DEV:
         deployment:
           item_types:
             - Lakehouse
             - Notebook
-      
+
       TEST:
         github:
           branch: test
         data:
           lakehouse_name: TestDataLH
-      
+
       PROD:
         deployment:
           validate_after_deployment: true

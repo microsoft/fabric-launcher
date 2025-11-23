@@ -7,7 +7,7 @@ and all items are accessible.
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class DeploymentValidator:
@@ -27,11 +27,11 @@ class DeploymentValidator:
         """
         self.workspace_id = workspace_id
         self.notebookutils = notebookutils
-        self.validation_results: Dict[str, Any] = {}
+        self.validation_results: dict[str, Any] = {}
 
     def validate_deployment(
-        self, expected_items: Optional[List[Dict[str, str]]] = None, check_accessibility: bool = True
-    ) -> Dict[str, Any]:
+        self, expected_items: Optional[list[dict[str, str]]] = None, check_accessibility: bool = True
+    ) -> dict[str, Any]:
         """
         Validate that deployment was successful.
 
@@ -83,7 +83,7 @@ class DeploymentValidator:
 
                 # Store all items
                 results["items"] = []
-                for idx, item in all_items.iterrows():
+                for _idx, item in all_items.iterrows():
                     results["items"].append({"name": item["Display Name"], "type": item["Type"], "id": item["Id"]})
 
             # Validate expected items if provided
@@ -162,7 +162,7 @@ class DeploymentValidator:
         self.validation_results = results
         return results
 
-    def _test_accessibility(self, items) -> Dict[str, Any]:
+    def _test_accessibility(self, items) -> dict[str, Any]:
         """
         Test if items exist and are accessible.
 
@@ -185,7 +185,7 @@ class DeploymentValidator:
             "items": [],  # Detailed item status
         }
 
-        for idx, item in items.iterrows():
+        for _idx, item in items.iterrows():
             item_name = item["Display Name"]
             item_type = item["Type"]
 

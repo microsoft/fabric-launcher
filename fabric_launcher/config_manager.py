@@ -9,7 +9,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import requests
 import yaml
@@ -57,7 +57,7 @@ class DeploymentConfig:
             )
         """
         self.config_path = config_path
-        self.config: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
 
         # If GitHub parameters provided, download config from GitHub
         if repo_owner and repo_name and config_file_path:
@@ -113,9 +113,7 @@ class DeploymentConfig:
                 mode="w", suffix=file_extension, delete=False, encoding="utf-8"
             ) as temp_file:
                 temp_file.write(response.text)
-                temp_path = temp_file.name
-
-            return temp_path
+                return temp_file.name
 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
@@ -140,7 +138,7 @@ class DeploymentConfig:
                 f"Branch: {branch}"
             )
 
-    def load_config(self, config_path: str) -> Dict[str, Any]:
+    def load_config(self, config_path: str) -> dict[str, Any]:
         """
         Load configuration from a YAML or JSON file.
 
@@ -201,7 +199,7 @@ class DeploymentConfig:
         value = self._get_nested(self.config, key)
         return value if value is not None else default
 
-    def _get_nested(self, data: Dict, key: str) -> Any:
+    def _get_nested(self, data: dict, key: str) -> Any:
         """Get nested dictionary value using dot notation."""
         keys = key.split(".")
         value = data
@@ -216,7 +214,7 @@ class DeploymentConfig:
 
         return value
 
-    def get_github_config(self, environment: Optional[str] = None) -> Dict[str, Any]:
+    def get_github_config(self, environment: Optional[str] = None) -> dict[str, Any]:
         """Get GitHub-specific configuration."""
         return {
             "repo_owner": self.get("github.repo_owner", environment=environment),
@@ -226,7 +224,7 @@ class DeploymentConfig:
             "workspace_folder": self.get("github.workspace_folder", "workspace", environment=environment),
         }
 
-    def get_deployment_config(self, environment: Optional[str] = None) -> Dict[str, Any]:
+    def get_deployment_config(self, environment: Optional[str] = None) -> dict[str, Any]:
         """Get deployment-specific configuration."""
         return {
             "environment": environment or self.get("deployment.environment", "DEV"),
@@ -237,7 +235,7 @@ class DeploymentConfig:
             "fix_zero_logical_ids": self.get("deployment.fix_zero_logical_ids", True, environment=environment),
         }
 
-    def get_data_config(self, environment: Optional[str] = None) -> Dict[str, Any]:
+    def get_data_config(self, environment: Optional[str] = None) -> dict[str, Any]:
         """Get data folder configuration."""
         return {
             "lakehouse_name": self.get("data.lakehouse_name", environment=environment),
@@ -245,7 +243,7 @@ class DeploymentConfig:
             "file_patterns": self.get("data.file_patterns", environment=environment),
         }
 
-    def get_notebook_config(self, environment: Optional[str] = None) -> Dict[str, Any]:
+    def get_notebook_config(self, environment: Optional[str] = None) -> dict[str, Any]:
         """Get post-deployment notebook configuration."""
         return {
             "notebook_name": self.get("post_deployment.notebook_name", environment=environment),
@@ -253,7 +251,7 @@ class DeploymentConfig:
             "timeout_seconds": self.get("post_deployment.timeout_seconds", 3600, environment=environment),
         }
 
-    def validate_required_fields(self, required_fields: List[str], environment: Optional[str] = None) -> List[str]:
+    def validate_required_fields(self, required_fields: list[str], environment: Optional[str] = None) -> list[str]:
         """
         Validate that required configuration fields are present.
 

@@ -11,7 +11,7 @@ This is a wrapper around the fabric-cicd library designed for use in Fabric note
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from .config_manager import DeploymentConfig
 from .deployment_report import DeploymentReport
@@ -261,7 +261,7 @@ class FabricLauncher:
     def deploy_artifacts(
         self,
         repository_directory: str,
-        item_types: Optional[List[str]] = None,
+        item_types: Optional[list[str]] = None,
         allow_non_empty_workspace: Optional[bool] = None,
     ) -> FabricDeployer:
         """
@@ -302,11 +302,11 @@ class FabricLauncher:
         branch: str = "main",
         github_token: Optional[str] = None,
         extract_to: Optional[str] = None,
-        item_types: Optional[List[str]] = None,
-        item_type_stages: Optional[List[List[str]]] = None,
-        data_folders: Optional[Dict[str, str]] = None,
+        item_types: Optional[list[str]] = None,
+        item_type_stages: Optional[list[list[str]]] = None,
+        data_folders: Optional[dict[str, str]] = None,
         lakehouse_name: Optional[str] = None,
-        data_file_patterns: Optional[List[str]] = None,
+        data_file_patterns: Optional[list[str]] = None,
         validate_after_deployment: bool = True,
         generate_report: bool = True,
         max_retries: int = 3,
@@ -589,7 +589,7 @@ class FabricLauncher:
         lakehouse_name: str,
         source_directory: str,
         target_folder: str = "data",
-        file_patterns: Optional[List[str]] = None,
+        file_patterns: Optional[list[str]] = None,
     ) -> None:
         """
         Upload files from a local directory to Lakehouse Files area.
@@ -625,7 +625,7 @@ class FabricLauncher:
         lakehouse_name: str,
         source_folder: str,
         target_folder: str = "data",
-        file_patterns: Optional[List[str]] = None,
+        file_patterns: Optional[list[str]] = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -650,8 +650,8 @@ class FabricLauncher:
         self,
         lakehouse_name: str,
         repository_base_path: str,
-        folder_mappings: Dict[str, str],
-        file_patterns: Optional[List[str]] = None,
+        folder_mappings: dict[str, str],
+        file_patterns: Optional[list[str]] = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -691,10 +691,10 @@ class FabricLauncher:
     def run_notebook(
         self,
         notebook_name: str,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[dict[str, Any]] = None,
         workspace_id: Optional[str] = None,
         timeout_seconds: int = 3600,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Trigger execution of a Fabric notebook (asynchronous).
 
@@ -715,8 +715,8 @@ class FabricLauncher:
         )
 
     def run_notebook_sync(
-        self, notebook_path: str, parameters: Optional[Dict[str, Any]] = None, timeout_seconds: int = 3600
-    ) -> Dict[str, Any]:
+        self, notebook_path: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
+    ) -> dict[str, Any]:
         """
         Run a notebook synchronously (blocks until completion).
 
@@ -734,7 +734,7 @@ class FabricLauncher:
 
     def get_notebook_job_status(
         self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get the status of a notebook job.
 
@@ -766,9 +766,9 @@ class FabricLauncher:
         self,
         test_notebooks: bool = True,
         test_lakehouses: bool = True,
-        test_notebooks_list: Optional[List[str]] = None,
-        test_lakehouses_list: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        test_notebooks_list: Optional[list[str]] = None,
+        test_lakehouses_list: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
         """
         Validate deployed items are accessible and functional.
 

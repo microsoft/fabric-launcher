@@ -7,7 +7,7 @@ This module provides functionality to generate comprehensive deployment reports.
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class DeploymentReport:
@@ -23,10 +23,10 @@ class DeploymentReport:
         self.session_id = now.strftime("%Y%m%d_%H%M%S")
         self.timestamp = now.isoformat()
         self.start_time = now
-        self.steps: List[Dict[str, Any]] = []
-        self.deployed_items: List[Dict[str, Any]] = []
+        self.steps: list[dict[str, Any]] = []
+        self.deployed_items: list[dict[str, Any]] = []
 
-        self.report_data: Dict[str, Any] = {
+        self.report_data: dict[str, Any] = {
             "session_id": self.session_id,
             "timestamp": self.timestamp,
             "deployment_start": self.timestamp,
@@ -152,7 +152,7 @@ class DeploymentReport:
         """
         self.report_data["warnings"].append({"message": warning, "step": step, "timestamp": datetime.now().isoformat()})
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get deployment summary.
 
@@ -242,7 +242,7 @@ class DeploymentReport:
 
         print("\n" + "=" * 60)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert report to dictionary.
 

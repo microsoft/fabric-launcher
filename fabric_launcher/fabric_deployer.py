@@ -8,7 +8,7 @@ Designed to work within Fabric notebooks with notebookutils available.
 import base64
 import json
 import time
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import fabric_cicd.constants
 from azure.core.credentials import AccessToken, TokenCredential
@@ -249,7 +249,7 @@ class FabricDeployer:
             print("=" * 60)
             print(f"The target workspace contains {len(other_items)} item(s) in addition to the current notebook.")
             print("\nExisting items:")
-            for idx, item in other_items.iterrows():
+            for _idx, item in other_items.iterrows():
                 print(f"  • {item['Display Name']} ({item['Type']})")
 
             print("\n⚠️ DEPLOYMENT BLOCKED")
@@ -270,7 +270,7 @@ class FabricDeployer:
             print(f"⚠️ Warning: Could not validate workspace contents: {e}")
             print("Proceeding with deployment...")
 
-    def deploy_items(self, item_types: Optional[List[str]] = None) -> None:
+    def deploy_items(self, item_types: Optional[list[str]] = None) -> None:
         """
         Deploy Fabric items to the workspace.
 

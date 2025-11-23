@@ -9,7 +9,6 @@ import json
 import os
 import uuid
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class PlatformFileFixer:
@@ -32,7 +31,7 @@ class PlatformFileFixer:
         """
         self.repository_directory = repository_directory
 
-    def find_platform_files(self) -> List[str]:
+    def find_platform_files(self) -> list[str]:
         """
         Find all .platform files in the repository directory.
 
@@ -48,7 +47,7 @@ class PlatformFileFixer:
 
         return platform_files
 
-    def check_platform_file(self, file_path: str) -> Tuple[bool, Dict]:
+    def check_platform_file(self, file_path: str) -> tuple[bool, dict]:
         """
         Check if a .platform file contains a zero GUID logicalId.
 
@@ -118,7 +117,7 @@ class PlatformFileFixer:
             print(f"  ❌ Failed to fix {file_path}: {e}")
             return False
 
-    def scan_and_fix_all(self, dry_run: bool = False) -> Dict[str, any]:
+    def scan_and_fix_all(self, dry_run: bool = False) -> dict[str, any]:
         """
         Scan all .platform files and fix any with zero GUIDs.
 
