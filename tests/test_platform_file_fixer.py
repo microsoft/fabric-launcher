@@ -2,11 +2,10 @@
 Unit tests for PlatformFileFixer module.
 """
 
-import unittest
-import tempfile
-import os
 import json
-from pathlib import Path
+import os
+import tempfile
+import unittest
 
 from fabric_launcher.platform_file_fixer import PlatformFileFixer
 
@@ -101,7 +100,7 @@ class TestPlatformFileFixer(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify the file was updated
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
         new_guid = data["config"]["logicalId"]
@@ -120,7 +119,7 @@ class TestPlatformFileFixer(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify the file was NOT updated
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
         self.assertEqual(data["config"]["logicalId"], self.zero_guid)
@@ -136,7 +135,7 @@ class TestPlatformFileFixer(unittest.TestCase):
         self.assertFalse(result)
 
         # Verify the file was not changed
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
         self.assertEqual(data["config"]["logicalId"], valid_guid)
@@ -181,7 +180,7 @@ class TestPlatformFileFixer(unittest.TestCase):
         # Verify the files were actually fixed
         for filename in ["item1.platform", "subdir/item3.platform"]:
             file_path = os.path.join(self.temp_dir, filename)
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
             self.assertNotEqual(data["config"]["logicalId"], self.zero_guid)
 
@@ -199,7 +198,7 @@ class TestPlatformFileFixer(unittest.TestCase):
 
         # Verify the file was NOT changed
         file_path = os.path.join(self.temp_dir, "item1.platform")
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
         self.assertEqual(data["config"]["logicalId"], self.zero_guid)
 

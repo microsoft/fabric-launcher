@@ -188,7 +188,6 @@ class DeploymentValidator:
         for idx, item in items.iterrows():
             item_name = item["Display Name"]
             item_type = item["Type"]
-            item_id = item["Id"]
 
             results["tested"] += 1
             item_status = {"name": item_name, "type": item_type, "accessible": False, "error": None}
@@ -208,7 +207,7 @@ class DeploymentValidator:
                             print(f"  ✅ Lakehouse '{item_name}' exists (properties not available)")
                             results["accessible"] += 1
                             item_status["accessible"] = True
-                    except:
+                    except Exception:
                         # If we can't get properties, item still exists so count as accessible
                         print(f"  ✅ Lakehouse '{item_name}' exists")
                         results["accessible"] += 1
@@ -227,7 +226,7 @@ class DeploymentValidator:
                             print(f"  ✅ Notebook '{item_name}' exists")
                             results["accessible"] += 1
                             item_status["accessible"] = True
-                    except:
+                    except Exception:
                         # Exists in workspace list, so count as accessible
                         print(f"  ✅ Notebook '{item_name}' exists")
                         results["accessible"] += 1

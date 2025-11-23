@@ -1,134 +1,165 @@
 # fabric-launcher Quick Reference
 
-A wrapper around [fabric-cicd](https://microsoft.github.io/fabric-cicd/0.1.3/) for simplified Fabric deployments.
-
-For parameterization and value replacement, see the [fabric-cicd documentation](https://microsoft.github.io/fabric-cicd/0.1.3/).
+Quick syntax reference for [fabric-launcher](https://github.com/microsoft/fabric-launcher). For parameterization details, see [fabric-cicd docs](https://microsoft.github.io/fabric-cicd/0.1.3/).
 
 ## Installation
 
 ```python
-%pip install fabric-launcher --quiet
-%pip install --upgrade azure-core azure-identity --quiet
+%pip install fabric-launcher
 notebookutils.session.restartPython()
 ```
 
-## Basic Usage
+## Basic Pattern
 
 ```python
 import notebookutils
 from fabric_launcher import FabricLauncher
 
-# Initialize
 launcher = FabricLauncher(notebookutils)
+launcher.download_and_deploy(repo_owner="org", repo_name="repo")
+```
 
-# Deploy solution with data folders
+## Common Methods
+
+### download_and_deploy()
+All-in-one download and deployment.
+
+```python
 launcher.download_and_deploy(
     repo_owner="myorg",
     repo_name="my-solution",
-    workspace_folder="workspace",
-    data_folders={"data": "reference-data"},
-    lakehouse_name="DataLH"
+    workspace_folder="workspace",          # Folder containing Fabric items
+    branch="main",
+    item_types=["Lakehouse", "Notebook"],  # Optional: specific types
+    item_type_stages=[...],                # Optional: staged deployment
+    data_folders={"data": "ref-data"},     # Optional: copy to Lakehouse
+    lakehouse_name="DataLH",               # Required if data_folders used
+    validate_after_deployment=True,        # Optional: validate items
+    generate_report=True                   # Optional: create report
 )
 ```
 
-## Common Operations
-
-### Download from GitHub
+### download_repository()
+Download repository without deploying.
 
 ```python
 launcher.download_repository(
     repo_owner="myorg",
     repo_name="my-solution",
     extract_to=".lakehouse/default/Files/src",
-    folder_to_extract="workspace",
+    folder_to_extract="workspace",  # Optional: specific folder
     branch="main"
 )
 ```
 
-### Deploy Artifacts
+### deploy_artifacts()
+Deploy from local directory.
 
 ```python
-# All items (staged)
-launcher.deploy_artifacts(
-    repository_directory="./workspace"
-)
-
-# Specific item types
 launcher.deploy_artifacts(
     repository_directory="./workspace",
-    item_types=["Lakehouse", "Notebook"]
+    item_types=["Lakehouse", "Notebook"]  # Optional: filter types
 )
 ```
 
-### Upload Files to Lakehouse
+### upload_files_to_lakehouse()
+Upload files to Lakehouse.
 
 ```python
-# From local directory
 launcher.upload_files_to_lakehouse(
     lakehouse_name="MyLakehouse",
     source_directory="./data",
     target_folder="raw",
     file_patterns=["*.json", "*.csv"]
 )
-
-# Copy data folders from repository to Lakehouse
-launcher.copy_data_folders_to_lakehouse(
-    lakehouse_name="MyLakehouse",
-    repository_base_path=".lakehouse/default/Files/src",
-    folder_mappings={
-        "data": "reference-data",
-        "samples": "sample-data"
-    },
-    file_patterns=["*.json", "*.csv"]
-)
 ```
 
-### Execute Notebooks
+### run_notebook()
+Execute notebook asynchronously.
 
 ```python
-# Asynchronous
-# Use for post-deployment tasks, custom item types, or configuration
 result = launcher.run_notebook(
     notebook_name="ProcessData",
-    parameters={"date": "2024-01-01"}
+    parameters={"date": "2024-01-01"},
+    timeout_seconds=3600
 )
 print(f"Job ID: {result['job_id']}")
+```
 
-# Synchronous (wait for completion)
-result = launcher.run_notebook_sync(
-    notebook_path="ProcessData",
-    parameters={"date": "2024-01-01"}
+## Staged Deployment
+
+```python
+launcher.download_and_deploy(
+    repo_owner="myorg",
+    repo_name="my-solution",
+    item_type_stages=[
+        ["Lakehouse", "KQLDatabase"],  # Stage 1
+        ["Notebook"],                   # Stage 2
+        ["SemanticModel", "Report"]    # Stage 3
+    ]
 )
 ```
 
 ## Configuration Options
 
 ```python
-FabricLauncher(
+launcher = FabricLauncher(
     notebookutils,
-    workspace_id=None,      # Auto-detected
-    environment="DEV",      # DEV, TEST, PROD
-    api_root_url="https://api.fabric.microsoft.com",
-    debug=False,           # Enable detailed logging
-    allow_non_empty_workspace=False  # Safety check: only deploy to empty workspaces
+    workspace_id=None,                    # Auto-detected
+    environment="DEV",                    # DEV, TEST, PROD
+    debug=False,                          # Detailed logging
+    allow_non_empty_workspace=False,      # Safety check
+    fix_zero_logical_ids=True,            # Fix GUID issues
+    config_file="config.yaml"             # Local config
 )
 ```
 
-## Supported Item Types
+## Configuration File
 
-Supports **all fabric-cicd item types**, including:
+```python
+# Load from GitHub (recommended)
+launcher = FabricLauncher(
+    notebookutils,
+    config_repo_owner="myorg",
+    config_repo_name="my-solution",
+    config_file_path="config/deployment.yaml",
+    environment="PROD"
+)
+```
 
-**Data Stores:** Lakehouse, KQLDatabase, Eventhouse
+**Example config file:**
+```yaml
+github:
+  repo_owner: myorg
+  repo_name: my-solution
+  branch: main
+  workspace_folder: workspace
 
-**Compute:** Notebook, Eventstream
+deployment:
+  validate_after_deployment: true
+  max_retries: 3
 
-**Analytics:** SemanticModel, Report, KQLDashboard
+data:
+  lakehouse_name: DataLH
+  folder_mappings:
+    data: reference-data
 
-**Automation:** Reflex, DataAgent
+environments:
+  PROD:
+    deployment:
+      max_retries: 5
+```
 
-**And more** - See [fabric-cicd docs](https://microsoft.github.io/fabric-cicd/0.1.3/) for complete list.
+## Item Types
 
-> **Note**: For unsupported item types, use post-deployment notebooks with custom code.
+All [fabric-cicd](https://microsoft.github.io/fabric-cicd/0.1.3/) item types supported:
+
+| Category | Types |
+|----------|-------|
+| **Data** | Lakehouse, KQLDatabase, Eventhouse |
+| **Compute** | Notebook, Eventstream |
+| **Analytics** | SemanticModel, Report, KQLDashboard |
+| **Other** | Reflex, DataAgent, and more |
 
 ## Error Handling
 
@@ -137,104 +168,30 @@ try:
     launcher.download_and_deploy(...)
 except Exception as e:
     print(f"Deployment failed: {e}")
-    # Handle error
-```
-
-## Advanced Usage
-
-### Staged Deployment
-
-```python
-from fabric_launcher import FabricDeployer
-
-deployer = FabricDeployer(
-    workspace_id=workspace_id,
-    repository_directory="./workspace",
-    notebookutils=notebookutils
-)
-
-# Stage 1: Data stores
-deployer.deploy_data_stores()
-
-# Stage 2: Compute and analytics
-deployer.deploy_compute_and_analytics()
-```
-
-### Check Notebook Status
-
-```python
-status = launcher.get_notebook_job_status(
-    notebook_id="abc-123",
-    job_id="job-456"
-)
-print(status)
-```
-
-### Cancel Notebook Job
-
-```python
-success = launcher.cancel_notebook_job(
-    notebook_id="abc-123",
-    job_id="job-456"
-)
 ```
 
 ## Troubleshooting
 
-### Authentication Issues
-
+**Check workspace ID:**
 ```python
 import sempy.fabric as fabric
-print(f"Workspace ID: {fabric.get_workspace_id()}")
+print(fabric.get_workspace_id())
 ```
 
-### Enable Debug Mode
-
+**Enable debug mode:**
 ```python
 launcher = FabricLauncher(notebookutils, debug=True)
 ```
 
-### Reinstall Package
-
+**Reinstall package:**
 ```python
 %pip install fabric-launcher --upgrade --force-reinstall
 notebookutils.session.restartPython()
 ```
 
-## Complete Example
+## Complete Examples
 
-```python
-import notebookutils
-from fabric_launcher import FabricLauncher
-
-# Configuration
-REPO_OWNER = "myorg"
-REPO_NAME = "retail-solution"
-LAKEHOUSE = "DataLH"
-
-# Initialize
-launcher = FabricLauncher(notebookutils, environment="PROD")
-
-# Deploy solution
-launcher.download_and_deploy(
-    repo_owner=REPO_OWNER,
-    repo_name=REPO_NAME,
-    folder_to_extract="workspace"
-)
-
-# Copy data folders to Lakehouse
-launcher.copy_data_folders_to_lakehouse(
-    lakehouse_name=LAKEHOUSE,
-    repository_base_path=".lakehouse/default/Files/src",
-    folder_mappings={"data": "reference-data"},
-    file_patterns=["*.json", "*.csv"]
-)
-
-# Run initialization
-result = launcher.run_notebook(
-    notebook_name="Initialize-Data",
-    parameters={"environment": "PROD"}
-)
-
-print(f"✅ Deployment complete! Job ID: {result['job_id']}")
-```
+See `examples/` directory:
+- `example_usage.py` - Basic workflow
+- `advanced_usage.py` - Advanced features
+- `production_workflow.py` - Production patterns

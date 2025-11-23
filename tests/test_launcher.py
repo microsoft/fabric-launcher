@@ -5,10 +5,10 @@ Note: These tests mock notebookutils and fabric dependencies since they're
 only available in Fabric notebook environment.
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
 import os
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
 
 from fabric_launcher.launcher import FabricLauncher
 
@@ -65,7 +65,7 @@ class TestFabricLauncherInitialization(unittest.TestCase):
             config_path = f.name
 
         try:
-            launcher = FabricLauncher(notebookutils=self.mock_notebookutils, config_file=config_path)
+            FabricLauncher(notebookutils=self.mock_notebookutils, config_file=config_path)
 
             # Verify config was loaded
             mock_config_class.assert_called_with(config_path=config_path)
@@ -81,7 +81,7 @@ class TestFabricLauncherInitialization(unittest.TestCase):
         mock_config_instance = Mock()
         mock_config_class.return_value = mock_config_instance
 
-        launcher = FabricLauncher(
+        FabricLauncher(
             notebookutils=self.mock_notebookutils,
             config_repo_owner="test-org",
             config_repo_name="test-repo",
@@ -173,7 +173,7 @@ class TestFabricLauncherMethods(unittest.TestCase):
         launcher = FabricLauncher(self.mock_notebookutils)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = launcher.download_repository(
+            launcher.download_repository(
                 repo_owner="test-org", repo_name="test-repo", extract_to=temp_dir, branch="main"
             )
 
@@ -197,7 +197,7 @@ class TestFabricLauncherMethods(unittest.TestCase):
         launcher = FabricLauncher(self.mock_notebookutils)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = launcher.deploy_artifacts(repository_directory=temp_dir, item_types=["Lakehouse", "Notebook"])
+            launcher.deploy_artifacts(repository_directory=temp_dir, item_types=["Lakehouse", "Notebook"])
 
             # Verify deployer was created
             mock_deployer_class.assert_called_once()

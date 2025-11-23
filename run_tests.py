@@ -7,9 +7,9 @@ Usage:
     python run_tests.py
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add the parent directory to the path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))

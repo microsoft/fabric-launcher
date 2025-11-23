@@ -2,12 +2,11 @@
 Unit tests for DeploymentReport module.
 """
 
-import unittest
-from unittest.mock import Mock, patch, mock_open
-import tempfile
-import os
 import json
-from datetime import datetime
+import os
+import tempfile
+import unittest
+from unittest.mock import patch
 
 from fabric_launcher.deployment_report import DeploymentReport
 
@@ -98,7 +97,7 @@ class TestDeploymentReport(unittest.TestCase):
             self.assertTrue(os.path.exists(report_path))
 
             # Verify content is valid JSON
-            with open(report_path, "r") as f:
+            with open(report_path) as f:
                 saved_data = json.load(f)
 
             self.assertEqual(saved_data["session_id"], self.report.session_id)
@@ -158,7 +157,7 @@ class TestDeploymentReportEdgeCases(unittest.TestCase):
             report_path = os.path.join(temp_dir, "empty_report.json")
             report.save_report(report_path)
 
-            with open(report_path, "r") as f:
+            with open(report_path) as f:
                 saved_data = json.load(f)
 
             self.assertEqual(len(saved_data["steps"]), 0)
@@ -176,7 +175,7 @@ class TestDeploymentReportEdgeCases(unittest.TestCase):
             report.save_report(report_path)
 
             # Verify it can be loaded back
-            with open(report_path, "r") as f:
+            with open(report_path) as f:
                 saved_data = json.load(f)
 
             self.assertEqual(saved_data["steps"][0]["details"], special_details)

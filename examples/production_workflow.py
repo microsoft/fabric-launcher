@@ -8,6 +8,7 @@ This is the most common use case for fabric-launcher in production environments.
 """
 
 import notebookutils
+
 from fabric_launcher import FabricLauncher
 
 # ============================================================================
@@ -68,7 +69,7 @@ def production_deployment_workflow():
 
     # Step 4: Display deployment report
     if report:
-        print(f"\n📊 Deployment Summary:")
+        print("\n📊 Deployment Summary:")
         print(f"   Duration: {report.duration_seconds:.2f} seconds")
         print(f"   Deployed Items: {len(report.deployed_items)}")
         print(f"   Session ID: {report.session_id}")
@@ -125,7 +126,7 @@ def dev_environment_deployment():
     # Deploy to dev environment
     downloader, deployer, report = launcher.download_and_deploy()
 
-    print(f"✅ Development deployment completed!")
+    print("✅ Development deployment completed!")
 
 
 # ============================================================================

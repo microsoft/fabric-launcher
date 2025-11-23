@@ -2,12 +2,13 @@
 Unit tests for DeploymentConfig module.
 """
 
-import unittest
-from unittest.mock import Mock, patch, mock_open
-import tempfile
-import os
-import yaml
 import json
+import os
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+import yaml
 
 from fabric_launcher.config_manager import DeploymentConfig
 
@@ -164,9 +165,7 @@ class TestDeploymentConfig(unittest.TestCase):
         mock_response.raise_for_status.side_effect = HTTPError(response=mock_response)
 
         with self.assertRaises(FileNotFoundError):
-            config = DeploymentConfig(
-                repo_owner="test-org", repo_name="test-repo", config_file_path="config/nonexistent.yaml"
-            )
+            DeploymentConfig(repo_owner="test-org", repo_name="test-repo", config_file_path="config/nonexistent.yaml")
 
     @patch("fabric_launcher.config_manager.requests.get")
     def test_download_config_with_token(self, mock_get):
@@ -179,7 +178,7 @@ class TestDeploymentConfig(unittest.TestCase):
         mock_get.return_value = mock_response
 
         github_token = "test-token-123"
-        config = DeploymentConfig(
+        DeploymentConfig(
             repo_owner="test-org",
             repo_name="test-repo",
             config_file_path="config/deployment.yaml",
@@ -202,7 +201,7 @@ class TestDeploymentConfig(unittest.TestCase):
             self.assertTrue(os.path.exists(template_path))
 
             # Verify template is valid YAML
-            with open(template_path, "r") as f:
+            with open(template_path) as f:
                 template_config = yaml.safe_load(f)
 
             self.assertIn("github", template_config)

@@ -2,13 +2,12 @@
 Unit tests for GitHubDownloader module.
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock, mock_open
-import tempfile
 import os
+import tempfile
+import unittest
 import zipfile
-from pathlib import Path
 from io import BytesIO
+from unittest.mock import MagicMock, Mock, patch
 
 from fabric_launcher.github_downloader import GitHubDownloader
 

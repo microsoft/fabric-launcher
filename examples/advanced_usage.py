@@ -15,7 +15,8 @@ https://microsoft.github.io/fabric-cicd/0.1.3/
 """
 
 import notebookutils
-from fabric_launcher import FabricLauncher, DeploymentConfig
+
+from fabric_launcher import FabricLauncher
 
 # ============================================================================
 # Example 1: Using Configuration Files from GitHub
@@ -168,7 +169,6 @@ def example_multi_environment_config():
       workspace_folder: workspace
     
     deployment:
-      staged_deployment: true
       validate_after_deployment: true
       max_retries: 3
     
@@ -257,8 +257,6 @@ def example_retry_and_error_handling():
 def example_report_analysis():
     """Analyze deployment report programmatically."""
 
-    from fabric_launcher import DeploymentReport
-
     launcher = FabricLauncher(notebookutils)
 
     # Deploy with reporting
@@ -269,8 +267,8 @@ def example_report_analysis():
         report.save_report("deployment_report.json")
 
         # Analyze report
-        print(f"\n📊 Deployment Report Analysis")
-        print(f"=" * 60)
+        print("\n📊 Deployment Report Analysis")
+        print("=" * 60)
         print(f"Session ID: {report.session_id}")
         print(f"Timestamp: {report.timestamp}")
         print(f"Duration: {report.duration_seconds:.2f} seconds")
@@ -282,7 +280,7 @@ def example_report_analysis():
             status = step["status"]
             status_counts[status] = status_counts.get(status, 0) + 1
 
-        print(f"\nStep Status Summary:")
+        print("\nStep Status Summary:")
         for status, count in status_counts.items():
             print(f"  {status}: {count}")
 
@@ -309,7 +307,7 @@ def example_config_templates():
     print("✅ Configuration template created: my_config.yaml")
 
     # Load and inspect configuration
-    config = DeploymentConfig("my_config.yaml", environment="DEV")
+    config = DeploymentConfig(config_path="my_config.yaml")
 
     # Get configuration sections
     github_config = config.get_github_config()
