@@ -3,9 +3,9 @@ Unit tests for DeploymentReport module.
 """
 
 import json
-import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from fabric_launcher.deployment_report import DeploymentReport
@@ -90,11 +90,11 @@ class TestDeploymentReport(unittest.TestCase):
         self.report.add_deployed_item(item_name="TestItem", item_type="Notebook", status="Success")
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            report_path = os.path.join(temp_dir, "test_report.json")
+            report_path = str(Path(temp_dir) / "test_report.json")
             self.report.save_report(report_path)
 
             # Verify file was created
-            self.assertTrue(os.path.exists(report_path))
+            self.assertTrue(Path(report_path).exists())
 
             # Verify content is valid JSON
             with open(report_path) as f:
@@ -107,11 +107,11 @@ class TestDeploymentReport(unittest.TestCase):
     def test_save_report_creates_directory(self):
         """Test that save_report creates parent directories."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            nested_path = os.path.join(temp_dir, "subdir", "report.json")
+            nested_path = str(Path(temp_dir) / "subdir" / "report.json")
             self.report.save_report(nested_path)
 
             # Verify file was created in nested directory
-            self.assertTrue(os.path.exists(nested_path))
+            self.assertTrue(Path(nested_path).exists())
 
     @patch("builtins.print")
     def test_print_report(self, mock_print):
@@ -154,7 +154,7 @@ class TestDeploymentReportEdgeCases(unittest.TestCase):
         report = DeploymentReport()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            report_path = os.path.join(temp_dir, "empty_report.json")
+            report_path = str(Path(temp_dir) / "empty_report.json")
             report.save_report(report_path)
 
             with open(report_path) as f:
@@ -171,7 +171,7 @@ class TestDeploymentReportEdgeCases(unittest.TestCase):
         report.add_step("Test", "Failed", special_details)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            report_path = os.path.join(temp_dir, "report.json")
+            report_path = str(Path(temp_dir) / "report.json")
             report.save_report(report_path)
 
             # Verify it can be loaded back

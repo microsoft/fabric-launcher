@@ -4,11 +4,11 @@ GitHub Repository Downloader Module
 This module provides functionality to download and extract folders from GitHub repositories.
 """
 
-import os
 import re
 import shutil
 import zipfile
 from io import BytesIO
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -63,12 +63,13 @@ class GitHubDownloader:
             response.raise_for_status()
 
             # Delete target directory if exists
-            if os.path.exists(extract_to) and os.path.isdir(extract_to):
+            extract_path = Path(extract_to)
+            if extract_path.exists() and extract_path.is_dir():
                 shutil.rmtree(extract_to)
                 print(f"🗑️ Deleted existing directory: {extract_to}")
 
             # Ensure the extraction directory exists
-            os.makedirs(extract_to, exist_ok=True)
+            extract_path.mkdir(parents=True, exist_ok=True)
 
             # Process the zip file directly from memory
             with zipfile.ZipFile(BytesIO(response.content)) as zipf:
@@ -77,9 +78,8 @@ class GitHubDownloader:
                     normalized_path = re.sub(r"^.*?/", "/", file_info.filename)
 
                     # If folder_to_extract is specified, only extract files from that folder
-                    if folder_to_extract:
-                        if not normalized_path.startswith(f"/{folder_to_extract}"):
-                            continue
+                    if folder_to_extract and not normalized_path.startswith(f"/{folder_to_extract}"):
+                        continue
 
                     # Calculate the output path
                     parts = file_info.filename.split("/")
@@ -89,20 +89,19 @@ class GitHubDownloader:
                     if remove_folder_prefix:
                         relative_path = relative_path.replace(remove_folder_prefix, "", 1)
 
-                    output_path = os.path.join(extract_to, relative_path)
+                    output_path = Path(extract_to) / relative_path
 
                     # Skip if it's a directory entry
                     if file_info.filename.endswith("/"):
-                        os.makedirs(output_path, exist_ok=True)
+                        output_path.mkdir(parents=True, exist_ok=True)
                         continue
 
                     # Ensure the directory for the file exists
-                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
 
                     # Extract and write the file
-                    with zipf.open(file_info) as source_file:
-                        with open(output_path, "wb") as target_file:
-                            target_file.write(source_file.read())
+                    with zipf.open(file_info) as source_file, open(str(output_path), "wb") as target_file:
+                        target_file.write(source_file.read())
 
             folder_desc = f"'{folder_to_extract}' folder" if folder_to_extract else "repository"
             print(f"✅ Successfully extracted {folder_desc} to {extract_to}")
@@ -136,7 +135,7 @@ class GitHubDownloader:
 
         try:
             # Create target directory if it doesn't exist
-            os.makedirs(target_directory, exist_ok=True)
+            Path(target_directory).mkdir(parents=True, exist_ok=True)
 
             # Set up headers for authentication if a token is provided
             headers = {}
@@ -150,7 +149,7 @@ class GitHubDownloader:
             response.raise_for_status()
 
             # Save to target directory
-            target_path = os.path.join(target_directory, file_name)
+            target_path = str(Path(target_directory) / file_name)
             with open(target_path, "wb") as f:
                 f.write(response.content)
 

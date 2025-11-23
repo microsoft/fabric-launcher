@@ -6,7 +6,6 @@ from YAML or JSON files. Supports downloading config files from GitHub repositor
 """
 
 import json
-import os
 import tempfile
 from pathlib import Path
 from typing import Any, Optional
@@ -72,7 +71,7 @@ class DeploymentConfig:
             print("✅ Configuration downloaded successfully")
 
         # Load config from local path
-        if self.config_path and os.path.exists(self.config_path):
+        if self.config_path and Path(self.config_path).exists():
             self.load_config(self.config_path)
 
     def _download_config_from_github(
@@ -122,21 +121,21 @@ class DeploymentConfig:
                     f"Repository: {repo_owner}/{repo_name}\n"
                     f"Branch: {branch}\n"
                     f"URL attempted: {url}"
-                )
+                ) from e
             if e.response.status_code == 401 or e.response.status_code == 403:
                 raise PermissionError(
                     f"Access denied to repository. This may be a private repository.\n"
                     f"Repository: {repo_owner}/{repo_name}\n"
                     f"Please provide a github_token parameter for private repositories."
-                )
-            raise Exception(f"Failed to download config file: {e}")
+                ) from e
+            raise Exception(f"Failed to download config file: {e}") from e
         except Exception as e:
             raise Exception(
                 f"Error downloading configuration from GitHub: {e}\n"
                 f"Repository: {repo_owner}/{repo_name}\n"
                 f"File: {file_path}\n"
                 f"Branch: {branch}"
-            )
+            ) from e
 
     def load_config(self, config_path: str) -> dict[str, Any]:
         """
@@ -152,7 +151,7 @@ class DeploymentConfig:
             FileNotFoundError: If config file doesn't exist
             ValueError: If file format is not supported
         """
-        if not os.path.exists(config_path):
+        if not Path(config_path).exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
         file_ext = Path(config_path).suffix.lower()
@@ -170,11 +169,11 @@ class DeploymentConfig:
             return self.config
 
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML format: {e}")
+            raise ValueError(f"Invalid YAML format: {e}") from e
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format: {e}")
+            raise ValueError(f"Invalid JSON format: {e}") from e
         except Exception as e:
-            raise ValueError(f"Error loading configuration: {e}")
+            raise ValueError(f"Error loading configuration: {e}") from e
 
     def get(self, key: str, default: Any = None, environment: Optional[str] = None) -> Any:
         """
@@ -288,7 +287,7 @@ class DeploymentConfig:
             print(f"✅ Configuration saved to {output_path}")
 
         except Exception as e:
-            raise ValueError(f"Error saving configuration: {e}")
+            raise ValueError(f"Error saving configuration: {e}") from e
 
     @staticmethod
     def create_template(output_path: str, format: str = "yaml") -> None:
@@ -343,4 +342,4 @@ class DeploymentConfig:
             print("📝 Edit this file with your deployment settings")
 
         except Exception as e:
-            raise ValueError(f"Error creating template: {e}")
+            raise ValueError(f"Error creating template: {e}") from e

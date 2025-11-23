@@ -3,9 +3,9 @@ Unit tests for PlatformFileFixer module.
 """
 
 import json
-import os
 import tempfile
 import unittest
+from pathlib import Path
 
 from fabric_launcher.platform_file_fixer import PlatformFileFixer
 
@@ -22,15 +22,15 @@ class TestPlatformFileFixer(unittest.TestCase):
         """Clean up test fixtures."""
         import shutil
 
-        if os.path.exists(self.temp_dir):
+        if Path(self.temp_dir).exists():
             shutil.rmtree(self.temp_dir)
 
     def create_platform_file(self, filename: str, logical_id: str) -> str:
         """Helper to create a .platform file with specified logicalId."""
-        file_path = os.path.join(self.temp_dir, filename)
+        file_path = str(Path(self.temp_dir) / filename)
 
         # Create directory if needed
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
 
         platform_data = {
             "config": {"version": "1.0", "logicalId": logical_id},
@@ -65,7 +65,7 @@ class TestPlatformFileFixer(unittest.TestCase):
 
         self.assertEqual(len(files), 2)
         # Verify both files are found
-        file_names = [os.path.basename(f) for f in files]
+        file_names = [Path(f).name for f in files]
         self.assertIn("item1.platform", file_names)
         self.assertIn("item2.platform", file_names)
 
@@ -179,7 +179,7 @@ class TestPlatformFileFixer(unittest.TestCase):
 
         # Verify the files were actually fixed
         for filename in ["item1.platform", "subdir/item3.platform"]:
-            file_path = os.path.join(self.temp_dir, filename)
+            file_path = str(Path(self.temp_dir) / filename)
             with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
             self.assertNotEqual(data["config"]["logicalId"], self.zero_guid)
@@ -197,14 +197,14 @@ class TestPlatformFileFixer(unittest.TestCase):
         self.assertEqual(results["files_fixed"], 1)
 
         # Verify the file was NOT changed
-        file_path = os.path.join(self.temp_dir, "item1.platform")
+        file_path = str(Path(self.temp_dir) / "item1.platform")
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
         self.assertEqual(data["config"]["logicalId"], self.zero_guid)
 
     def test_invalid_json_file(self):
         """Test handling of invalid JSON in platform file."""
-        file_path = os.path.join(self.temp_dir, "invalid.platform")
+        file_path = str(Path(self.temp_dir) / "invalid.platform")
         with open(file_path, "w", encoding="utf-8") as f:
             f.write("not valid json {")
 

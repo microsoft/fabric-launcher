@@ -3,9 +3,9 @@ Unit tests for DeploymentConfig module.
 """
 
 import json
-import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import yaml
@@ -43,7 +43,7 @@ class TestDeploymentConfig(unittest.TestCase):
             self.assertEqual(loaded_config["github"]["repo_owner"], "test-org")
             self.assertEqual(loaded_config["deployment"]["max_retries"], 3)
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     def test_load_json_config(self):
         """Test loading JSON configuration file."""
@@ -58,7 +58,7 @@ class TestDeploymentConfig(unittest.TestCase):
             self.assertEqual(loaded_config["github"]["repo_owner"], "test-org")
             self.assertEqual(loaded_config["deployment"]["max_retries"], 3)
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     def test_load_config_file_not_found(self):
         """Test loading non-existent configuration file."""
@@ -77,7 +77,7 @@ class TestDeploymentConfig(unittest.TestCase):
             with self.assertRaises(ValueError):
                 config.load_config(config_path)
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     def test_get_github_config(self):
         """Test getting GitHub configuration."""
@@ -93,7 +93,7 @@ class TestDeploymentConfig(unittest.TestCase):
             self.assertEqual(github_config["repo_name"], "test-repo")
             self.assertEqual(github_config["branch"], "main")
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     def test_get_deployment_config(self):
         """Test getting deployment configuration."""
@@ -112,7 +112,7 @@ class TestDeploymentConfig(unittest.TestCase):
             # fix_zero_logical_ids should default to True
             self.assertTrue(deploy_config["fix_zero_logical_ids"])
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     def test_get_data_config(self):
         """Test getting data configuration."""
@@ -127,7 +127,7 @@ class TestDeploymentConfig(unittest.TestCase):
             self.assertEqual(data_config["lakehouse_name"], "TestLH")
             self.assertIn("data", data_config["folder_mappings"])
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     @patch("fabric_launcher.config_manager.requests.get")
     def test_download_config_from_github_success(self, mock_get):
@@ -193,12 +193,12 @@ class TestDeploymentConfig(unittest.TestCase):
     def test_create_template(self):
         """Test creating configuration template."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            template_path = os.path.join(temp_dir, "template.yaml")
+            template_path = str(Path(temp_dir) / "template.yaml")
 
             DeploymentConfig.create_template(template_path)
 
             # Verify template was created
-            self.assertTrue(os.path.exists(template_path))
+            self.assertTrue(Path(template_path).exists())
 
             # Verify template is valid YAML
             with open(template_path) as f:

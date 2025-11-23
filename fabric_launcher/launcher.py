@@ -10,7 +10,7 @@ This module provides the main FabricLauncher class that orchestrates all operati
 This is a wrapper around the fabric-cicd library designed for use in Fabric notebooks.
 """
 
-import os
+from pathlib import Path
 from typing import Any, Optional
 
 from .config_manager import DeploymentConfig
@@ -434,7 +434,7 @@ class FabricLauncher:
             raise
 
         # Construct repository directory path
-        repository_directory = os.path.join(extract_to, workspace_folder)
+        repository_directory = str(Path(extract_to) / workspace_folder)
 
         # Step 2: Deploy artifacts
         if report:
@@ -578,7 +578,7 @@ class FabricLauncher:
             report.print_report()
 
             # Save report to file
-            report_path = os.path.join(extract_to, f"deployment_report_{report.session_id}.json")
+            report_path = str(Path(extract_to) / f"deployment_report_{report.session_id}.json")
             report.save_report(report_path)
             print(f"\n📊 Detailed report saved to: {report_path}")
 

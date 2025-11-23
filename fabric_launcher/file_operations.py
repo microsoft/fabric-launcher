@@ -7,6 +7,7 @@ Supports copying files from local repository folders to Lakehouse.
 
 import os
 import shutil
+from pathlib import Path
 from typing import Optional
 
 
@@ -58,7 +59,7 @@ class LakehouseFileManager:
             target_directory = self.notebookutils.fs.getMountPath(mount_point) + f"/Files/{target_folder}/"
 
             # Create target directory if it doesn't exist
-            os.makedirs(target_directory, exist_ok=True)
+            Path(target_directory).mkdir(parents=True, exist_ok=True)
             print(f"📂 Target directory: {target_directory}")
 
             # Upload files
@@ -66,12 +67,11 @@ class LakehouseFileManager:
             for root, _dirs, files in os.walk(source_directory):
                 for file in files:
                     # Check if file matches any pattern (if patterns specified)
-                    if file_patterns:
-                        if not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
-                            continue
+                    if file_patterns and not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
+                        continue
 
-                    source_path = os.path.join(root, file)
-                    target_path = os.path.join(target_directory, file)
+                    source_path = str(Path(root) / file)
+                    target_path = str(Path(target_directory) / file)
 
                     # Copy file
                     shutil.copy2(source_path, target_path)
@@ -94,7 +94,7 @@ class LakehouseFileManager:
             target_folder: Target folder path in Lakehouse Files area (default: "data")
         """
         try:
-            if not os.path.exists(file_path):
+            if not Path(file_path).exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 
             # Get abfs path to the lakehouse and mount it
@@ -109,11 +109,11 @@ class LakehouseFileManager:
             target_directory = self.notebookutils.fs.getMountPath(mount_point) + f"/Files/{target_folder}/"
 
             # Create target directory if it doesn't exist
-            os.makedirs(target_directory, exist_ok=True)
+            Path(target_directory).mkdir(parents=True, exist_ok=True)
 
             # Get file name
-            file_name = os.path.basename(file_path)
-            target_path = os.path.join(target_directory, file_name)
+            file_name = Path(file_path).name
+            target_path = str(Path(target_directory) / file_name)
 
             # Copy file
             shutil.copy2(file_path, target_path)
@@ -143,7 +143,7 @@ class LakehouseFileManager:
             recursive: Whether to copy subdirectories recursively
         """
         try:
-            if not os.path.exists(source_folder):
+            if not Path(source_folder).exists():
                 raise FileNotFoundError(f"Source folder not found: {source_folder}")
 
             # Get abfs path to the lakehouse and mount it
@@ -159,7 +159,7 @@ class LakehouseFileManager:
             target_directory = self.notebookutils.fs.getMountPath(mount_point) + f"/Files/{target_folder}/"
 
             # Create target directory if it doesn't exist
-            os.makedirs(target_directory, exist_ok=True)
+            Path(target_directory).mkdir(parents=True, exist_ok=True)
             print(f"📂 Target directory: {target_directory}")
 
             # Copy files and folders
@@ -173,43 +173,43 @@ class LakehouseFileManager:
 
                     # Create corresponding directory in target
                     if rel_path != ".":
-                        target_subdir = os.path.join(target_directory, rel_path)
-                        os.makedirs(target_subdir, exist_ok=True)
+                        target_subdir = str(Path(target_directory) / rel_path)
+                        Path(target_subdir).mkdir(parents=True, exist_ok=True)
                     else:
                         target_subdir = target_directory
 
                     # Copy files
                     for file in files:
                         # Check if file matches any pattern (if patterns specified)
-                        if file_patterns:
-                            if not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
-                                continue
+                        if file_patterns and not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
+                            continue
 
-                        source_path = os.path.join(root, file)
-                        target_path = os.path.join(target_subdir, file)
+                        source_path = str(Path(root) / file)
+                        target_path = str(Path(target_subdir) / file)
 
                         # Copy file
                         shutil.copy2(source_path, target_path)
 
                         # Show relative path for clarity
-                        rel_file_path = os.path.join(rel_path, file) if rel_path != "." else file
+                        rel_file_path = str(Path(rel_path) / file) if rel_path != "." else file
                         print(f"  ✓ Copied: {rel_file_path}")
                         copied_count += 1
             else:
                 # Only copy files in the root of source folder
-                for file in os.listdir(source_folder):
-                    file_path = os.path.join(source_folder, file)
+                for item in Path(source_folder).iterdir():
+                    file_path = str(item)
 
                     # Skip directories
-                    if os.path.isdir(file_path):
+                    if item.is_dir():
                         continue
 
-                    # Check if file matches any pattern (if patterns specified)
-                    if file_patterns:
-                        if not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
-                            continue
+                    file = item.name
 
-                    target_path = os.path.join(target_directory, file)
+                    # Check if file matches any pattern (if patterns specified)
+                    if file_patterns and not any(self._matches_pattern(file, pattern) for pattern in file_patterns):
+                        continue
+
+                    target_path = str(Path(target_directory) / file)
 
                     # Copy file
                     shutil.copy2(file_path, target_path)
@@ -297,7 +297,7 @@ class LakehouseFileManager:
         # Build full source paths
         full_folder_mappings = {}
         for repo_folder, lakehouse_folder in folder_mappings.items():
-            source_path = os.path.join(repository_base_path, repo_folder)
+            source_path = str(Path(repository_base_path) / repo_folder)
             full_folder_mappings[source_path] = lakehouse_folder
 
         # Copy all folders

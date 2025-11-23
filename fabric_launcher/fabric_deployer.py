@@ -86,7 +86,7 @@ class FabricNotebookTokenCredential(TokenCredential):
                 raise ValueError("JWT missing expiration claim")
             return exp
         except (IndexError, json.JSONDecodeError, ValueError) as e:
-            raise ValueError(f"Invalid JWT token format: {e}")
+            raise ValueError(f"Invalid JWT token format: {e}") from e
 
 
 class FabricDeployer:

@@ -28,10 +28,10 @@ def production_deployment_workflow():
     """
 
     # Step 1: Define your GitHub repository details
-    REPO_OWNER = "myorg"
-    REPO_NAME = "my-fabric-solution"
-    CONFIG_FILE_PATH = "config/deployment_prod.yaml"  # Path in your repo
-    GITHUB_TOKEN = None  # Set if private repo, or use notebookutils.credentials
+    REPO_OWNER = "myorg"  # noqa: N806
+    REPO_NAME = "my-fabric-solution"  # noqa: N806
+    CONFIG_FILE_PATH = "config/deployment_prod.yaml"  # Path in your repo  # noqa: N806
+    GITHUB_TOKEN = None  # Set if private repo, or use notebookutils.credentials  # noqa: N806
 
     # Optional: Get GitHub token from Fabric Key Vault if needed
     # GITHUB_TOKEN = notebookutils.credentials.getSecret("MyKeyVault", "github-token")
@@ -194,8 +194,8 @@ def private_repo_with_keyvault():
 
     # Retrieve GitHub token from Key Vault
     # (You need to create a Key Vault and store your GitHub token there first)
-    KEY_VAULT_NAME = "MyFabricKeyVault"
-    SECRET_NAME = "github-personal-access-token"
+    KEY_VAULT_NAME = "MyFabricKeyVault"  # noqa: N806
+    SECRET_NAME = "github-personal-access-token"  # noqa: N806
 
     try:
         github_token = notebookutils.credentials.getSecret(KEY_VAULT_NAME, SECRET_NAME)

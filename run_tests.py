@@ -7,12 +7,12 @@ Usage:
     python run_tests.py
 """
 
-import os
 import sys
 import unittest
+from pathlib import Path
 
 # Add the parent directory to the path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 
 def run_tests():

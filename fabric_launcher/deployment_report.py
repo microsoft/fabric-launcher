@@ -5,8 +5,8 @@ This module provides functionality to generate comprehensive deployment reports.
 """
 
 import json
-import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
 
 
@@ -268,9 +268,9 @@ class DeploymentReport:
 
         try:
             # Create directory if it doesn't exist
-            output_dir = os.path.dirname(output_path)
-            if output_dir and not os.path.exists(output_dir):
-                os.makedirs(output_dir)
+            output_path_obj = Path(output_path)
+            if output_path_obj.parent != Path():
+                output_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
             if format == "json":
                 with open(output_path, "w", encoding="utf-8") as f:

@@ -2,11 +2,11 @@
 Unit tests for GitHubDownloader module.
 """
 
-import os
 import tempfile
 import unittest
 import zipfile
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from fabric_launcher.github_downloader import GitHubDownloader
@@ -69,8 +69,8 @@ class TestGitHubDownloader(unittest.TestCase):
             self.assertIn(expected_url, call_args_str)
 
             # Verify extraction occurred (directory exists and file was extracted)
-            self.assertTrue(os.path.exists(temp_dir))
-            self.assertTrue(os.path.exists(os.path.join(temp_dir, "test_file.txt")))
+            self.assertTrue(Path(temp_dir).exists())
+            self.assertTrue((Path(temp_dir) / "test_file.txt").exists())
 
     @patch("fabric_launcher.github_downloader.requests.get")
     def test_download_repository_with_token(self, mock_get):
@@ -137,9 +137,9 @@ class TestGitHubDownloader(unittest.TestCase):
 
             # Verify only workspace files were extracted
             # The public API removes the repo prefix, so files should be at workspace/file1.txt
-            self.assertTrue(os.path.exists(os.path.join(extract_to, "workspace", "file1.txt")))
-            self.assertTrue(os.path.exists(os.path.join(extract_to, "workspace", "file2.txt")))
-            self.assertFalse(os.path.exists(os.path.join(extract_to, "data")))
+            self.assertTrue((Path(extract_to) / "workspace" / "file1.txt").exists())
+            self.assertTrue((Path(extract_to) / "workspace" / "file2.txt").exists())
+            self.assertFalse((Path(extract_to) / "data").exists())
 
 
 class TestGitHubDownloaderIntegration(unittest.TestCase):

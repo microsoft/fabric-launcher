@@ -5,9 +5,9 @@ Note: These tests mock notebookutils and fabric dependencies since they're
 only available in Fabric notebook environment.
 """
 
-import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from fabric_launcher.launcher import FabricLauncher
@@ -70,7 +70,7 @@ class TestFabricLauncherInitialization(unittest.TestCase):
             # Verify config was loaded
             mock_config_class.assert_called_with(config_path=config_path)
         finally:
-            os.unlink(config_path)
+            Path(config_path).unlink()
 
     @patch("sempy.fabric")
     @patch("fabric_launcher.launcher.DeploymentConfig")
