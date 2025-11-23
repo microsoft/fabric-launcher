@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include fabric_launcher *.py
+recursive-include fabric_launcher/examples *.py

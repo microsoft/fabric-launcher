@@ -1,0 +1,15 @@
+# Development dependencies for fabric-launcher
+# Install with: pip install -r requirements-dev.txt
+
+# Testing frameworks
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+coverage>=7.0.0
+
+# Code quality
+ruff>=0.1.0
+
+# Documentation
+sphinx>=6.0.0
+sphinx-rtd-theme>=1.2.0

@@ -1,0 +1,101 @@
+# fabric-launcher Deployment Configuration Example
+# This file demonstrates all available configuration options
+#
+# Note: fabric-launcher wraps fabric-cicd for deployment operations.
+# For parameterization and value replacement in your Fabric artifacts, see:
+# https://microsoft.github.io/fabric-cicd/0.1.3/
+
+# GitHub repository settings
+github:
+  repo_owner: your-org-name
+  repo_name: your-repo-name
+  branch: main
+  workspace_folder: workspace
+  github_token: null  # Optional: for private repos
+
+# Deployment settings
+deployment:
+  staged_deployment: true  # Deploy data stores first, then compute items
+  validate_after_deployment: true  # Run post-deployment validation
+  max_retries: 3  # Number of retry attempts for failed operations
+  item_types: null  # Optional: specific item types to deploy (null = all)
+    # Examples (supports all fabric-cicd item types):
+    # - Lakehouse
+    # - Notebook
+    # - Eventstream
+    # - KQLDatabase
+    # - SemanticModel
+    # - Report
+    # See https://microsoft.github.io/fabric-cicd/0.1.3/ for complete list
+
+# Data upload settings (optional)
+data:
+  lakehouse_name: DataLakehouse
+  folder_mappings:
+    # Map repository folders to Lakehouse folders
+    data/reference: reference-data
+    data/samples: sample-data
+    data/config: configuration
+  file_patterns:
+    # File patterns to include in upload
+    - "*.json"
+    - "*.csv"
+    - "*.parquet"
+
+# Environment-specific overrides
+# These settings override the base settings for specific environments
+environments:
+  
+  # Development environment
+  DEV:
+    github:
+      branch: dev
+    deployment:
+      item_types:
+        - Lakehouse
+        - Notebook  # Only deploy lakehouses and notebooks in DEV
+      validate_after_deployment: false
+    data:
+      lakehouse_name: DevDataLH
+  
+  # Test environment
+  TEST:
+    github:
+      branch: test
+    deployment:
+      staged_deployment: true
+      validate_after_deployment: true
+      max_retries: 3
+    data:
+      lakehouse_name: TestDataLH
+  
+  # Production environment
+  PROD:
+    github:
+      branch: main
+    deployment:
+      staged_deployment: true
+      validate_after_deployment: true
+      max_retries: 5  # More retries in production
+    data:
+      lakehouse_name: ProdDataLH
+      file_patterns:
+        - "*.json"
+        - "*.parquet"  # Exclude CSVs in production
+
+# ============================================================================
+# Usage Example:
+# ============================================================================
+#
+# import notebookutils
+# from fabric_launcher import FabricLauncher
+#
+# # Load configuration and deploy
+# launcher = FabricLauncher(
+#     notebookutils,
+#     config_file="deployment_config.yaml",
+#     environment="PROD"  # Uses PROD environment overrides
+# )
+#
+# # Deploy using config settings
+# launcher.download_and_deploy()
