@@ -234,9 +234,7 @@ class DeploymentConfig:
             "allow_non_empty_workspace": self.get(
                 "deployment.allow_non_empty_workspace", False, environment=environment
             ),
-            "fix_zero_logical_ids": self.get(
-                "deployment.fix_zero_logical_ids", True, environment=environment
-            ),
+            "fix_zero_logical_ids": self.get("deployment.fix_zero_logical_ids", True, environment=environment),
         }
 
     def get_data_config(self, environment: Optional[str] = None) -> Dict[str, Any]:

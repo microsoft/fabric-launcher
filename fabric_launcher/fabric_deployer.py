@@ -283,14 +283,14 @@ class FabricDeployer:
             print("🔧 Checking for zero GUID logicalIds in .platform files...")
             fixer = PlatformFileFixer(self.repository_directory)
             results = fixer.scan_and_fix_all(dry_run=False)
-            
+
             if results["files_fixed"] > 0:
                 print(f"✅ Fixed {results['files_fixed']} .platform file(s) with zero GUID logicalIds")
             elif results["files_with_zero_guid"] > 0:
                 print(f"⚠️ Warning: Found {results['files_with_zero_guid']} file(s) with issues but could not fix them")
         else:
             print("⚠️ Skipping logicalId validation (fix_zero_logical_ids=False)")
-        
+
         # Validate workspace is empty (unless explicitly allowed)
         if not self.allow_non_empty_workspace:
             print("🔍 Validating workspace is empty...")

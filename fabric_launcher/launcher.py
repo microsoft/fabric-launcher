@@ -446,7 +446,7 @@ class FabricLauncher:
             # Handle staged deployment if item_type_stages provided
             if item_type_stages:
                 print(f"📋 Deploying in {len(item_type_stages)} stages")
-                
+
                 # Initialize deployer once
                 self._fabric_deployer = FabricDeployer(
                     workspace_id=self.workspace_id,
@@ -458,12 +458,12 @@ class FabricLauncher:
                     allow_non_empty_workspace=allow_non_empty_workspace,
                     fix_zero_logical_ids=self.fix_zero_logical_ids,
                 )
-                
+
                 # Deploy each stage
                 for stage_num, stage_item_types in enumerate(item_type_stages, 1):
                     print(f"\n  📦 Stage {stage_num}/{len(item_type_stages)}: {', '.join(stage_item_types)}")
                     self._fabric_deployer.deploy_items(stage_item_types)
-                    
+
                 deployer = self._fabric_deployer
                 print(f"\n✅ All {len(item_type_stages)} deployment stages completed")
             else:
