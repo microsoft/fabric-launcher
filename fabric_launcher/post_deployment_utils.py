@@ -856,7 +856,7 @@ def create_accelerated_shortcut_in_kql_db(
         logger.info(f"Enabling query acceleration on '{target_shortcut_name}'...")
         kql_command = (
             f'.alter external table {target_shortcut_name} policy query_acceleration '
-            f'{{"IsEnabled": true, "Hot": "365.00:00:00", "MaxAge": "01:00:00"}}'
+            f"""'{{"IsEnabled": true, "Hot": "365.00:00:00", "MaxAge": "01:00:00"}}'"""
         )
 
         result = exec_kql_command(kusto_query_uri, target_kql_db_name, kql_command, notebookutils)
