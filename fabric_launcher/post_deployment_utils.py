@@ -11,9 +11,12 @@ This module provides utility functions for common post-deployment tasks includin
 
 import base64
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> Optional[str]:
@@ -47,7 +50,7 @@ def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> Option
         return None
 
     except Exception as e:
-        print(f"❌ Error retrieving folder: {e}")
+        logger.error(f"Error retrieving folder: {e}")
         return None
 
 
@@ -109,7 +112,7 @@ def scan_logical_ids(repository_directory: str, workspace_id: str, client) -> di
     repo_path = Path(repository_directory)
     platform_files = list(repo_path.rglob(".platform"))
 
-    print(f"🔍 Scanning {len(platform_files)} .platform files for logical IDs...")
+    logger.info(f"Scanning {len(platform_files)} .platform files for logical IDs...")
 
     for platform_file in platform_files:
         try:
@@ -141,18 +144,18 @@ def scan_logical_ids(repository_directory: str, workspace_id: str, client) -> di
                         if item.get("displayName") == display_name and item.get("type") == item_type:
                             actual_id = item.get("id")
                             logical_id_map[logical_id] = actual_id
-                            print(f"  ✓ Mapped {item_type} '{display_name}': {logical_id} → {actual_id}")
+                            logger.debug(f"Mapped {item_type} '{display_name}': {logical_id} → {actual_id}")
                             break
 
             except Exception as e:
-                print(f"  ⚠️ Warning: Could not resolve item '{display_name}': {e}")
+                logger.warning(f"Could not resolve item '{display_name}': {e}")
                 continue
 
         except Exception as e:
-            print(f"  ⚠️ Warning: Error processing {platform_file}: {e}")
+            logger.warning(f"Error processing {platform_file}: {e}")
             continue
 
-    print(f"✅ Logical ID scanning completed ({len(logical_id_map)} mappings)")
+    logger.info(f"Logical ID scanning completed ({len(logical_id_map)} mappings)")
     return logical_id_map
 
 
@@ -185,15 +188,15 @@ def replace_logical_ids(item_definition: dict[str, Any], logical_id_map: dict[st
         if logical_id in definition_str:
             definition_str = definition_str.replace(logical_id, actual_id)
             replacements_made += 1
-            print(f"  ✓ Replaced logical ID: {logical_id} → {actual_id}")
+            logger.debug(f"Replaced logical ID: {logical_id} → {actual_id}")
 
     # Convert back to dictionary
     updated_definition = json.loads(definition_str)
 
     if replacements_made > 0:
-        print(f"✅ Replaced {replacements_made} logical ID(s) in definition")
+        logger.info(f"Replaced {replacements_made} logical ID(s) in definition")
     else:
-        print("ℹ️ No logical IDs found in definition")
+        logger.debug("No logical IDs found in definition")
 
     return updated_definition
 
@@ -246,13 +249,11 @@ def create_or_update_fabric_item(
         ...     logical_id_map=logical_id_map
         ... )
     """
-    print(f"\n{'=' * 60}")
-    print(f"📦 Creating/Updating {item_type}: {item_name}")
-    print(f"{'=' * 60}")
+    logger.info(f"Creating/Updating {item_type}: {item_name}")
 
     try:
         # Step 1: Get item definition from repository
-        print("📥 Loading item definition from repository...")
+        logger.debug("Loading item definition from repository...")
         platform_data, item_path = get_item_definition_from_repo(item_relative_path, repository_directory)
 
         # Extract metadata
@@ -261,7 +262,7 @@ def create_or_update_fabric_item(
         item_description = metadata.get("description", description)
 
         # Step 2: Create the item (without definition)
-        print(f"🔧 Creating {item_type} item: {display_name}")
+        logger.info(f"Creating {item_type} item: {display_name}")
 
         create_url = f"v1/workspaces/{workspace_id}/{endpoint}"
 
@@ -275,9 +276,9 @@ def create_or_update_fabric_item(
         if create_response.status_code in [200, 201]:
             item_data = create_response.json()
             item_id = item_data["id"]
-            print(f"✅ {item_type} item created successfully (ID: {item_id})")
+            logger.info(f"{item_type} item created successfully (ID: {item_id})")
         elif create_response.status_code == 409:
-            print(f"ℹ️ {item_type} '{display_name}' already exists, retrieving existing item...")
+            logger.info(f"{item_type} '{display_name}' already exists, retrieving existing item...")
 
             # Find existing item
             list_url = f"v1/workspaces/{workspace_id}/items"
@@ -293,7 +294,7 @@ def create_or_update_fabric_item(
                         break
 
                 if item_id:
-                    print(f"✅ Using existing {item_type} (ID: {item_id})")
+                    logger.info(f"Using existing {item_type} (ID: {item_id})")
                 else:
                     raise Exception(f"Could not find existing {item_type} '{display_name}'")
             else:
@@ -302,7 +303,7 @@ def create_or_update_fabric_item(
             raise Exception(f"Failed to create {item_type}: {create_response.status_code} - {create_response.text}")
 
         # Step 3: Load and process definition files
-        print("📝 Processing item definition files...")
+        logger.debug("Processing item definition files...")
 
         # Collect all definition files (excluding .platform)
         definition_parts = []
@@ -328,7 +329,7 @@ def create_or_update_fabric_item(
                         for logical_id, actual_id in logical_id_map.items():
                             if logical_id in text_content:
                                 text_content = text_content.replace(logical_id, actual_id)
-                                print(f"  ✓ Replaced logical ID in {relative_file_path}")
+                                logger.debug(f"Replaced logical ID in {relative_file_path}")
 
                         file_content = text_content.encode("utf-8")
                     except UnicodeDecodeError:
@@ -347,10 +348,10 @@ def create_or_update_fabric_item(
                 )
 
         if not definition_parts:
-            print("ℹ️ No definition files found, skipping definition update")
+            logger.info("No definition files found, skipping definition update")
             return item_id
 
-        print(f"📤 Uploading {len(definition_parts)} definition file(s)...")
+        logger.info(f"Uploading {len(definition_parts)} definition file(s)...")
 
         # Step 4: Update item definition
         update_url = f"v1/workspaces/{workspace_id}/{endpoint}/{item_id}/updateDefinition"
@@ -360,16 +361,16 @@ def create_or_update_fabric_item(
         update_response = client.post(update_url, json=definition_payload)
 
         if update_response.status_code in [200, 202]:
-            print(f"✅ {item_type} definition updated successfully")
+            logger.info(f"{item_type} definition updated successfully")
         else:
-            print(f"⚠️ Warning: Definition update returned status {update_response.status_code}")
-            print(f"Response: {update_response.text[:500]}")
+            logger.warning(f"Definition update returned status {update_response.status_code}")
+            logger.debug(f"Response: {update_response.text[:500]}")
 
-        print(f"✅ {item_type} deployment completed: {display_name}")
+        logger.info(f"{item_type} deployment completed: {display_name}")
         return item_id
 
     except Exception as e:
-        print(f"❌ Error creating/updating {item_type}: {e}")
+        logger.error(f"Error creating/updating {item_type}: {e}")
         raise
 
 
@@ -397,14 +398,14 @@ def move_item_to_folder(item_name: str, item_type: str, folder_name: str, worksp
         ... )
     """
     try:
-        print(f"🔍 Finding {item_type} '{item_name}'...")
+        logger.debug(f"Finding {item_type} '{item_name}'...")
 
         # Step 1: Find the item ID
         list_url = f"v1/workspaces/{workspace_id}/items"
         list_response = client.get(list_url)
 
         if list_response.status_code != 200:
-            print(f"❌ Failed to list items: {list_response.status_code}")
+            logger.error(f"Failed to list items: {list_response.status_code}")
             return False
 
         items = list_response.json().get("value", [])
@@ -416,34 +417,34 @@ def move_item_to_folder(item_name: str, item_type: str, folder_name: str, worksp
                 break
 
         if not item_id:
-            print(f"❌ {item_type} '{item_name}' not found in workspace")
+            logger.error(f"{item_type} '{item_name}' not found in workspace")
             return False
 
-        print(f"✓ Found {item_type} (ID: {item_id})")
+        logger.debug(f"Found {item_type} (ID: {item_id})")
 
         # Step 2: Get the target folder ID
-        print(f"🔍 Finding folder '{folder_name}'...")
+        logger.debug(f"Finding folder '{folder_name}'...")
         target_folder_id = get_folder_id_by_name(folder_name, workspace_id, client)
 
         if not target_folder_id:
-            print(f"❌ Folder '{folder_name}' not found in workspace")
+            logger.error(f"Folder '{folder_name}' not found in workspace")
             return False
 
-        print(f"✓ Found folder (ID: {target_folder_id})")
+        logger.debug(f"Found folder (ID: {target_folder_id})")
 
         # Step 3: Move the item
-        print(f"🔧 Moving {item_type} to folder '{folder_name}'...")
+        logger.info(f"Moving {item_type} to folder '{folder_name}'...")
         move_url = f"v1/workspaces/{workspace_id}/items/{item_id}/move"
         move_payload = {"targetFolderId": target_folder_id}
 
         move_response = client.post(move_url, json=move_payload)
 
         if move_response.status_code == 200:
-            print(f"✅ {item_type} '{item_name}' moved to folder '{folder_name}' successfully")
+            logger.info(f"{item_type} '{item_name}' moved to folder '{folder_name}' successfully")
             return True
-        print(f"❌ Failed to move item: {move_response.status_code} - {move_response.text}")
+        logger.error(f"Failed to move item: {move_response.status_code} - {move_response.text}")
         return False
 
     except Exception as e:
-        print(f"❌ Error moving item: {e}")
+        logger.error(f"Error moving item: {e}")
         return False

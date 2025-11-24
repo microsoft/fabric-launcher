@@ -89,16 +89,13 @@ pytest tests/ -v --cov=fabric_launcher --cov-report=html --cov-report=term
 # Linux: xdg-open htmlcov/index.html
 ```
 
-### Running Tests Without pytest
+### Alternative Test Runners
 
-If you don't have pytest installed:
+You can also use unittest if needed:
 
 ```bash
 # Run with unittest
 python -m unittest discover tests -v
-
-# Or use the test runner script
-python run_tests.py
 ```
 
 ### Test Coverage Goals
@@ -327,6 +324,15 @@ When adding features:
 - Add usage examples
 - Update the Quick Start if applicable
 
+### Documentation
+
+Update documentation in the `docs/` directory:
+- `docs/README.md`: Main documentation overview
+- `docs/QUICKSTART.md`: Quick start guide
+- `docs/API.md`: API reference
+
+Documentation is written in Markdown for easy reading on GitHub.
+
 ### Changelog
 
 Add entry to `CHANGELOG.md` for significant changes:
@@ -359,7 +365,7 @@ All pull requests must pass CI checks before merging.
 
 - **Issues**: Open an issue on GitHub for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions
-- **Documentation**: Check the `tests/README.md` for testing details
+- **Documentation**: Check the `docs/` directory for comprehensive documentation
 
 ## Code of Conduct
 
