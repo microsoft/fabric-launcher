@@ -284,6 +284,170 @@ move_item_to_folder(
 
 **Returns:** True if successful, False otherwise
 
+---
+
+### get_kusto_query_uri()
+
+Retrieve the Kusto query service URI for a given Eventhouse.
+
+```python
+get_kusto_query_uri(
+    workspace_id: str,
+    eventhouse_name: str,
+    client
+) -> str
+```
+
+**Parameters:**
+- `workspace_id`: Target workspace ID
+- `eventhouse_name`: Display name of the Eventhouse
+- `client`: Fabric REST client instance
+
+**Returns:** Kusto query service URI
+
+---
+
+### exec_kql_command()
+
+Execute a KQL management command against a Kusto database.
+
+```python
+exec_kql_command(
+    kusto_query_uri: str,
+    kql_db_name: str,
+    kql_command: str,
+    notebookutils
+) -> Optional[dict]
+```
+
+**Parameters:**
+- `kusto_query_uri`: Kusto query service URI
+- `kql_db_name`: Name of the KQL database
+- `kql_command`: KQL management command to execute
+- `notebookutils`: Notebook utilities for authentication
+
+**Returns:** Response JSON as dictionary if successful, None otherwise
+
+---
+
+### create_shortcut()
+
+Create an internal OneLake shortcut in a Fabric item.
+
+```python
+create_shortcut(
+    target_workspace_id: str,
+    target_item_name: str,
+    target_item_type: str,
+    target_path: str,
+    target_shortcut_name: str,
+    source_workspace_id: str,
+    source_item_id: str,
+    source_path: str,
+    client,
+    notebookutils
+) -> Optional[dict]
+```
+
+**Parameters:**
+- `target_workspace_id`: Workspace ID where shortcut will be created
+- `target_item_name`: Name of target item (Lakehouse or KQL Database)
+- `target_item_type`: Type of target item
+- `target_path`: Path within target item for shortcut
+- `target_shortcut_name`: Name for the new shortcut
+- `source_workspace_id`: Workspace ID containing source item
+- `source_item_id`: ID of source item
+- `source_path`: Path within source item to link to
+- `client`: Fabric REST client instance
+- `notebookutils`: Notebook utilities for authentication
+
+**Returns:** Response JSON if successful, None otherwise
+
+---
+
+### create_accelerated_shortcut_in_kql_db()
+
+Create OneLake shortcut and accelerated external table in KQL Database.
+
+```python
+create_accelerated_shortcut_in_kql_db(
+    target_workspace_id: str,
+    target_kql_db_name: str,
+    target_shortcut_name: str,
+    source_workspace_id: str,
+    source_item_id: str,
+    source_path: str,
+    target_eventhouse_name: str,
+    source_lakehouse_name: str,
+    client,
+    notebookutils
+) -> bool
+```
+
+**Parameters:**
+- `target_workspace_id`: Workspace ID containing KQL Database
+- `target_kql_db_name`: Name of KQL Database
+- `target_shortcut_name`: Name for shortcut and external table
+- `source_workspace_id`: Workspace ID containing source Lakehouse
+- `source_item_id`: ID of source Lakehouse
+- `source_path`: Path to table in Lakehouse
+- `target_eventhouse_name`: Name of Eventhouse
+- `source_lakehouse_name`: Name of source Lakehouse
+- `client`: Fabric REST client instance
+- `notebookutils`: Notebook utilities for authentication
+
+**Returns:** True if successful, False otherwise
+
+---
+
+### get_sql_endpoint()
+
+Get the SQL endpoint connection string for a Fabric item.
+
+```python
+get_sql_endpoint(
+    workspace_id: str,
+    item_name: str,
+    item_type: str,
+    client
+) -> Optional[str]
+```
+
+**Parameters:**
+- `workspace_id`: Target workspace ID
+- `item_name`: Display name of item
+- `item_type`: Type of item (Lakehouse, Warehouse, SQLEndpoint)
+- `client`: Fabric REST client instance
+
+**Returns:** SQL endpoint connection string if found, None otherwise
+
+---
+
+### exec_sql_query()
+
+Execute a SQL query against a Fabric SQL endpoint.
+
+```python
+exec_sql_query(
+    sql_endpoint: str,
+    database_name: str,
+    sql_query: str,
+    notebookutils,
+    timeout: int = 60
+) -> Optional[list]
+```
+
+**Parameters:**
+- `sql_endpoint`: SQL endpoint connection string
+- `database_name`: Name of database to query
+- `sql_query`: SQL query to execute
+- `notebookutils`: Notebook utilities for authentication
+- `timeout`: Request timeout in seconds
+
+**Returns:** List of result rows as dictionaries if successful, None otherwise
+
+---
+
 ## Configuration Manager
 
 ### DeploymentConfig

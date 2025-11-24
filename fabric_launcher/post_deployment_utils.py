@@ -7,6 +7,9 @@ This module provides utility functions for common post-deployment tasks includin
 - Logical ID scanning and replacement
 - Generic item creation and updates
 - Item movement between folders
+- Eventhouse and KQL Database operations
+- SQL endpoint operations
+- Shortcut management
 """
 
 import base64
@@ -15,6 +18,8 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -448,3 +453,549 @@ def move_item_to_folder(item_name: str, item_type: str, folder_name: str, worksp
     except Exception as e:
         logger.error(f"Error moving item: {e}")
         return False
+
+
+def get_kusto_query_uri(workspace_id: str, eventhouse_name: str, client) -> str:
+    """
+    Retrieve the Kusto query service URI for a given Eventhouse.
+
+    Args:
+        workspace_id: Target workspace ID
+        eventhouse_name: Display name of the Eventhouse
+        client: Fabric REST client instance (e.g., fabric.FabricRestClient())
+
+    Returns:
+        Kusto query service URI (e.g., "https://xxxxx.kusto.fabric.microsoft.com")
+
+    Raises:
+        ValueError: If the queryServiceUri cannot be retrieved or parsed
+        Exception: For other API or network errors
+
+    Example:
+        >>> from sempy import fabric
+        >>> client = fabric.FabricRestClient()
+        >>> workspace_id = fabric.get_workspace_id()
+        >>> kusto_uri = get_kusto_query_uri(workspace_id, "MyEventhouse", client)
+        >>> print(kusto_uri)
+        'https://xxxxx.kusto.fabric.microsoft.com'
+    """
+    try:
+        # Resolve the Eventhouse ID
+        logger.debug(f"Resolving Eventhouse '{eventhouse_name}'...")
+        list_url = f"v1/workspaces/{workspace_id}/items"
+        list_response = client.get(list_url)
+
+        if list_response.status_code != 200:
+            raise Exception(f"Failed to list items: {list_response.status_code}")
+
+        items = list_response.json().get("value", [])
+        eventhouse_id = None
+
+        for item in items:
+            if item.get("displayName") == eventhouse_name and item.get("type") == "Eventhouse":
+                eventhouse_id = item.get("id")
+                break
+
+        if not eventhouse_id:
+            raise ValueError(f"Eventhouse '{eventhouse_name}' not found in workspace")
+
+        logger.debug(f"Found Eventhouse (ID: {eventhouse_id})")
+
+        # Get Eventhouse properties
+        url = f"v1/workspaces/{workspace_id}/eventhouses/{eventhouse_id}"
+        response = client.get(url)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to get Eventhouse properties: {response.status_code}")
+
+        eventhouse_data = response.json()
+        kusto_query_uri = eventhouse_data.get("properties", {}).get("queryServiceUri")
+
+        if not kusto_query_uri:
+            raise ValueError("queryServiceUri not found in Eventhouse properties")
+
+        logger.info(f"Retrieved Kusto query URI: {kusto_query_uri}")
+        return kusto_query_uri
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving Kusto query URI: {e}")
+        raise
+
+
+def exec_kql_command(kusto_query_uri: str, kql_db_name: str, kql_command: str, notebookutils) -> Optional[dict]:
+    """
+    Execute a KQL management command against a Kusto database.
+
+    Args:
+        kusto_query_uri: Kusto query service URI (from get_kusto_query_uri)
+        kql_db_name: Name of the KQL database
+        kql_command: KQL management command to execute (e.g., ".create table ...")
+        notebookutils: Notebook utilities for authentication (notebookutils.credentials.getToken)
+
+    Returns:
+        Response JSON as dictionary if successful, None otherwise
+
+    Example:
+        >>> # Create an external table
+        >>> kql_command = ".create-or-alter external table MyTable kind=delta (h@'path/to/data;impersonate')"
+        >>> result = exec_kql_command(kusto_uri, "MyDatabase", kql_command, notebookutils)
+
+        >>> # Enable query acceleration
+        >>> kql_command = ".alter external table MyTable policy query_acceleration '{\"IsEnabled\": true}'"
+        >>> result = exec_kql_command(kusto_uri, "MyDatabase", kql_command, notebookutils)
+    """
+    try:
+        logger.info(f"Executing KQL command on database '{kql_db_name}'")
+        logger.debug(f"Command: {kql_command[:100]}...")
+
+        # Get authentication token
+        token = notebookutils.credentials.getToken(kusto_query_uri)
+        mgmt_url = f"{kusto_query_uri}/v1/rest/mgmt"
+
+        payload = {"csl": kql_command, "db": kql_db_name}
+
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+
+        response = requests.post(mgmt_url, json=payload, headers=headers, timeout=60)
+
+        logger.debug(f"Response status: {response.status_code}")
+
+        if not response.ok:
+            logger.warning(f"KQL command returned status {response.status_code}")
+            logger.debug(f"Response: {response.text[:500]}")
+            return None
+
+        logger.info("KQL command executed successfully")
+        return response.json()
+
+    except requests.RequestException as e:
+        logger.error(f"Error executing KQL command: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error executing KQL command: {e}")
+        return None
+
+
+def create_shortcut(
+    target_workspace_id: str,
+    target_item_name: str,
+    target_item_type: str,
+    target_path: str,
+    target_shortcut_name: str,
+    source_workspace_id: str,
+    source_item_id: str,
+    source_path: str,
+    client,
+    notebookutils,
+) -> Optional[dict]:
+    """
+    Create an internal OneLake shortcut in a Fabric item.
+
+    Args:
+        target_workspace_id: Workspace ID where the shortcut will be created
+        target_item_name: Name of the target item (e.g., Lakehouse or KQL Database name)
+        target_item_type: Type of target item (e.g., "Lakehouse", "KQLDatabase")
+        target_path: Path within the target item where shortcut will be created (e.g., "Tables", "Files")
+        target_shortcut_name: Name for the new shortcut
+        source_workspace_id: Workspace ID containing the source item
+        source_item_id: ID of the source item
+        source_path: Path within the source item to link to (e.g., "Tables/MyTable")
+        client: Fabric REST client instance
+        notebookutils: Notebook utilities for authentication
+
+    Returns:
+        Response JSON if successful, None otherwise
+
+    Example:
+        >>> # Create shortcut in a Lakehouse
+        >>> result = create_shortcut(
+        ...     target_workspace_id=workspace_id,
+        ...     target_item_name="MyLakehouse",
+        ...     target_item_type="Lakehouse",
+        ...     target_path="Tables",
+        ...     target_shortcut_name="ExternalData",
+        ...     source_workspace_id=source_workspace_id,
+        ...     source_item_id=source_lakehouse_id,
+        ...     source_path="Tables/SourceTable",
+        ...     client=client,
+        ...     notebookutils=notebookutils
+        ... )
+    """
+    try:
+        logger.info(f"Creating shortcut '{target_shortcut_name}' in {target_item_type} '{target_item_name}'")
+
+        # Resolve target item ID
+        logger.debug("Resolving target item ID...")
+        list_url = f"v1/workspaces/{target_workspace_id}/items"
+        list_response = client.get(list_url)
+
+        if list_response.status_code != 200:
+            logger.error(f"Failed to list items: {list_response.status_code}")
+            return None
+
+        items = list_response.json().get("value", [])
+        target_item_id = None
+
+        for item in items:
+            if item.get("displayName") == target_item_name and item.get("type") == target_item_type:
+                target_item_id = item.get("id")
+                break
+
+        if not target_item_id:
+            logger.error(f"{target_item_type} '{target_item_name}' not found in workspace")
+            return None
+
+        logger.debug(f"Found target item (ID: {target_item_id})")
+
+        # Create shortcut
+        base_url = client.default_base_url
+        url = f"{base_url}/v1/workspaces/{target_workspace_id}/items/{target_item_id}/shortcuts"
+
+        payload = {
+            "path": target_path,
+            "name": target_shortcut_name,
+            "target": {
+                "type": "OneLake",
+                "oneLake": {
+                    "workspaceId": source_workspace_id,
+                    "itemId": source_item_id,
+                    "path": source_path,
+                },
+            },
+        }
+
+        token = notebookutils.credentials.getToken("pbi")
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+        logger.debug(f"Response status: {response.status_code}")
+
+        if response.ok:
+            logger.info(f"Shortcut '{target_shortcut_name}' created successfully")
+            try:
+                return response.json()
+            except ValueError:
+                return {"status": "success"}
+        logger.warning(f"Shortcut creation returned status {response.status_code}")
+        logger.debug(f"Response: {response.text[:500]}")
+        return None
+
+    except requests.RequestException as e:
+        logger.error(f"Error creating shortcut: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error creating shortcut: {e}")
+        return None
+
+
+def create_accelerated_shortcut_in_kql_db(
+    target_workspace_id: str,
+    target_kql_db_name: str,
+    target_shortcut_name: str,
+    source_workspace_id: str,
+    source_item_id: str,
+    source_path: str,
+    target_eventhouse_name: str,
+    source_lakehouse_name: str,
+    client,
+    notebookutils,
+) -> bool:
+    """
+    Create OneLake shortcut and accelerated external table in KQL Database.
+
+    This function:
+    1. Creates a OneLake shortcut in the KQL Database pointing to a Lakehouse table
+    2. Creates an external table in Kusto using the shortcut
+    3. Enables query acceleration on the external table
+
+    Args:
+        target_workspace_id: Workspace ID containing the KQL Database
+        target_kql_db_name: Name of the KQL Database
+        target_shortcut_name: Name for the shortcut and external table
+        source_workspace_id: Workspace ID containing the source Lakehouse
+        source_item_id: ID of the source Lakehouse
+        source_path: Path to the table in the Lakehouse (e.g., "Tables/MyTable")
+        target_eventhouse_name: Name of the Eventhouse containing the KQL Database
+        source_lakehouse_name: Name of the source Lakehouse (for path resolution)
+        client: Fabric REST client instance
+        notebookutils: Notebook utilities for authentication and path resolution
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = create_accelerated_shortcut_in_kql_db(
+        ...     target_workspace_id=workspace_id,
+        ...     target_kql_db_name="MyKQLDatabase",
+        ...     target_shortcut_name="Meters",
+        ...     source_workspace_id=workspace_id,
+        ...     source_item_id=lakehouse_id,
+        ...     source_path="Tables/meters",
+        ...     target_eventhouse_name="MyEventhouse",
+        ...     source_lakehouse_name="ReferenceDataLH",
+        ...     client=client,
+        ...     notebookutils=notebookutils
+        ... )
+    """
+    try:
+        logger.info(f"Creating accelerated shortcut '{target_shortcut_name}' in KQL Database '{target_kql_db_name}'")
+
+        # Step 1: Create shortcut
+        target_path = "Shortcut"  # Fixed value for KQL Database
+
+        shortcut_result = create_shortcut(
+            target_workspace_id=target_workspace_id,
+            target_item_name=target_kql_db_name,
+            target_item_type="KQLDatabase",
+            target_path=target_path,
+            target_shortcut_name=target_shortcut_name,
+            source_workspace_id=source_workspace_id,
+            source_item_id=source_item_id,
+            source_path=source_path,
+            client=client,
+            notebookutils=notebookutils,
+        )
+
+        if not shortcut_result:
+            logger.error("Aborting: Shortcut creation failed")
+            return False
+
+        logger.info("Shortcut created successfully")
+
+        # Step 2: Get Kusto query URI
+        kusto_query_uri = get_kusto_query_uri(target_workspace_id, target_eventhouse_name, client)
+
+        # Step 3: Construct OneLake path for external table
+        logger.debug("Resolving KQL Database item ID...")
+        list_url = f"v1/workspaces/{target_workspace_id}/items"
+        list_response = client.get(list_url)
+
+        if list_response.status_code != 200:
+            logger.error(f"Failed to list items: {list_response.status_code}")
+            return False
+
+        items = list_response.json().get("value", [])
+        target_kql_db_id = None
+
+        for item in items:
+            if item.get("displayName") == target_kql_db_name and item.get("type") == "KQLDatabase":
+                target_kql_db_id = item.get("id")
+                break
+
+        if not target_kql_db_id:
+            logger.error(f"KQL Database '{target_kql_db_name}' not found")
+            return False
+
+        # Get Lakehouse tables path to construct base path
+        lakehouse_properties = notebookutils.lakehouse.getWithProperties(source_lakehouse_name)
+        lakehouse_table_path = lakehouse_properties.properties["oneLakeTablesPath"]
+        base_path = "/".join(lakehouse_table_path.rstrip("/").split("/")[:-2])
+        kql_db_source_path = f"{base_path}/{target_kql_db_id}/{target_path}/{target_shortcut_name}"
+
+        logger.debug(f"External table path: {kql_db_source_path}")
+
+        # Step 4: Create external table
+        logger.info(f"Creating external table '{target_shortcut_name}'...")
+        kql_command = (
+            f".create-or-alter external table {target_shortcut_name} "
+            f"kind=delta (h@'{kql_db_source_path};impersonate')"
+        )
+
+        result = exec_kql_command(kusto_query_uri, target_kql_db_name, kql_command, notebookutils)
+
+        if not result:
+            logger.error("Failed to create external table")
+            return False
+
+        logger.info("External table created successfully")
+
+        # Step 5: Enable query acceleration
+        logger.info(f"Enabling query acceleration on '{target_shortcut_name}'...")
+        kql_command = (
+            f'.alter external table {target_shortcut_name} policy query_acceleration '
+            f'{{"IsEnabled": true, "Hot": "365.00:00:00", "MaxAge": "01:00:00"}}'
+        )
+
+        result = exec_kql_command(kusto_query_uri, target_kql_db_name, kql_command, notebookutils)
+
+        if not result:
+            logger.warning("Failed to enable query acceleration (table may still be usable)")
+            return True  # Consider this a partial success
+
+        logger.info("Query acceleration enabled successfully")
+        logger.info(f"Accelerated shortcut '{target_shortcut_name}' created successfully")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error creating accelerated shortcut: {e}")
+        return False
+
+
+def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) -> Optional[str]:
+    """
+    Get the SQL endpoint connection string for a Fabric item.
+
+    Args:
+        workspace_id: Target workspace ID
+        item_name: Display name of the item (e.g., Lakehouse or Warehouse name)
+        item_type: Type of item (e.g., "Lakehouse", "Warehouse", "SQLEndpoint")
+        client: Fabric REST client instance
+
+    Returns:
+        SQL endpoint connection string if found, None otherwise
+
+    Example:
+        >>> from sempy import fabric
+        >>> client = fabric.FabricRestClient()
+        >>> workspace_id = fabric.get_workspace_id()
+        >>> sql_endpoint = get_sql_endpoint(workspace_id, "MyLakehouse", "Lakehouse", client)
+        >>> print(sql_endpoint)
+        'xxxxx.datawarehouse.fabric.microsoft.com'
+    """
+    try:
+        logger.info(f"Retrieving SQL endpoint for {item_type} '{item_name}'")
+
+        # Find the item
+        list_url = f"v1/workspaces/{workspace_id}/items"
+        list_response = client.get(list_url)
+
+        if list_response.status_code != 200:
+            logger.error(f"Failed to list items: {list_response.status_code}")
+            return None
+
+        items = list_response.json().get("value", [])
+        item_id = None
+
+        for item in items:
+            if item.get("displayName") == item_name and item.get("type") == item_type:
+                item_id = item.get("id")
+                break
+
+        if not item_id:
+            logger.error(f"{item_type} '{item_name}' not found in workspace")
+            return None
+
+        logger.debug(f"Found {item_type} (ID: {item_id})")
+
+        # Get item properties based on type
+        if item_type == "Lakehouse":
+            url = f"v1/workspaces/{workspace_id}/lakehouses/{item_id}"
+        elif item_type == "Warehouse":
+            url = f"v1/workspaces/{workspace_id}/warehouses/{item_id}"
+        elif item_type == "SQLEndpoint":
+            url = f"v1/workspaces/{workspace_id}/sqlEndpoints/{item_id}"
+        else:
+            logger.error(f"Unsupported item type for SQL endpoint: {item_type}")
+            return None
+
+        response = client.get(url)
+
+        if response.status_code != 200:
+            logger.error(f"Failed to get {item_type} properties: {response.status_code}")
+            return None
+
+        item_data = response.json()
+
+        # SQL endpoint may be in different property locations depending on item type
+        sql_endpoint = item_data.get("properties", {}).get("connectionString")
+
+        if not sql_endpoint:
+            sql_endpoint = item_data.get("properties", {}).get("sqlEndpointProperties", {}).get("connectionString")
+
+        if not sql_endpoint:
+            logger.error("SQL endpoint connection string not found in properties")
+            return None
+
+        logger.info(f"Retrieved SQL endpoint: {sql_endpoint}")
+        return sql_endpoint
+
+    except Exception as e:
+        logger.error(f"Error retrieving SQL endpoint: {e}")
+        return None
+
+
+def exec_sql_query(
+    sql_endpoint: str, database_name: str, sql_query: str, notebookutils, timeout: int = 60
+) -> Optional[list]:
+    """
+    Execute a SQL query against a Fabric SQL endpoint.
+
+    Args:
+        sql_endpoint: SQL endpoint connection string (from get_sql_endpoint)
+        database_name: Name of the database to query
+        sql_query: SQL query to execute
+        notebookutils: Notebook utilities for authentication
+        timeout: Request timeout in seconds (default: 60)
+
+    Returns:
+        List of result rows as dictionaries if successful, None otherwise
+
+    Example:
+        >>> # Get SQL endpoint
+        >>> sql_endpoint = get_sql_endpoint(workspace_id, "MyLakehouse", "Lakehouse", client)
+        >>>
+        >>> # Execute query
+        >>> sql_query = "SELECT TOP 10 * FROM meters WHERE meter_type = 'residential'"
+        >>> results = exec_sql_query(sql_endpoint, "MyLakehouse", sql_query, notebookutils)
+        >>>
+        >>> if results:
+        ...     for row in results:
+        ...         print(row)
+    """
+    try:
+        logger.info(f"Executing SQL query on database '{database_name}'")
+        logger.debug(f"Query: {sql_query[:100]}...")
+
+        # Construct connection string
+        connection_string = f"https://{sql_endpoint}"
+
+        # Get authentication token
+        token = notebookutils.credentials.getToken(connection_string)
+
+        # Construct API endpoint URL
+        api_url = f"{connection_string}/sql/v1/databases/{database_name}/query"
+
+        payload = {"query": sql_query}
+
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+
+        response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
+
+        logger.debug(f"Response status: {response.status_code}")
+
+        if not response.ok:
+            logger.warning(f"SQL query returned status {response.status_code}")
+            logger.debug(f"Response: {response.text[:500]}")
+            return None
+
+        result_data = response.json()
+
+        # Parse results based on response structure
+        # The actual structure may vary - adjust based on your API response format
+        rows = result_data.get("rows", [])
+        columns = result_data.get("columns", [])
+
+        if columns:
+            # Convert to list of dictionaries for easier access
+            results = []
+            for row in rows:
+                row_dict = {}
+                for idx, col_name in enumerate(columns):
+                    row_dict[col_name] = row[idx] if idx < len(row) else None
+                results.append(row_dict)
+
+            logger.info(f"SQL query executed successfully ({len(results)} rows)")
+            return results
+
+        logger.info("SQL query executed successfully")
+        return rows
+
+    except requests.RequestException as e:
+        logger.error(f"Error executing SQL query: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error executing SQL query: {e}")
+        return None

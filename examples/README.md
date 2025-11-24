@@ -54,6 +54,19 @@ Shows how to use utility functions for custom post-deployment tasks like logical
 - Fabric workspace with appropriate items and folders
 - `sempy.fabric` for authentication
 
+### `eventhouse_and_sql_examples.py`
+Demonstrates advanced post-deployment operations including:
+- Eventhouse and KQL Database operations
+- Creating shortcuts and accelerated external tables
+- SQL endpoint queries
+- KQL management command execution
+
+**Prerequisites**:
+- Eventhouse with KQL Database
+- Lakehouse with tables to create shortcuts from
+- Fabric notebook environment with `notebookutils`
+- `sempy.fabric` for authentication
+
 ### `deployment_config_example.yaml`
 Sample YAML configuration file for deployment settings.
 

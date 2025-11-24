@@ -13,9 +13,15 @@ from unittest.mock import Mock
 import pytest
 
 from fabric_launcher.post_deployment_utils import (
+    create_accelerated_shortcut_in_kql_db,
     create_or_update_fabric_item,
+    create_shortcut,
+    exec_kql_command,
+    exec_sql_query,
     get_folder_id_by_name,
     get_item_definition_from_repo,
+    get_kusto_query_uri,
+    get_sql_endpoint,
     move_item_to_folder,
     replace_logical_ids,
     scan_logical_ids,
@@ -339,6 +345,547 @@ class TestMoveItemToFolder:
         )
 
         assert result is False
+
+
+class TestGetKustoQueryUri:
+    """Tests for get_kusto_query_uri function."""
+
+    def test_get_kusto_query_uri_success(self, mock_client, workspace_id):
+        """Test successfully retrieving Kusto query URI."""
+        # Mock list items response
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [
+                {"displayName": "TestEventhouse", "type": "Eventhouse", "id": "eventhouse-id-123"},
+                {"displayName": "OtherItem", "type": "Lakehouse", "id": "other-id-456"},
+            ]
+        }
+
+        # Mock eventhouse properties response
+        eventhouse_response = Mock()
+        eventhouse_response.status_code = 200
+        eventhouse_response.json.return_value = {
+            "properties": {"queryServiceUri": "https://test.kusto.fabric.microsoft.com"}
+        }
+
+        mock_client.get.side_effect = [list_response, eventhouse_response]
+
+        result = get_kusto_query_uri(workspace_id, "TestEventhouse", mock_client)
+
+        assert result == "https://test.kusto.fabric.microsoft.com"
+        assert mock_client.get.call_count == 2
+
+    def test_get_kusto_query_uri_eventhouse_not_found(self, mock_client, workspace_id):
+        """Test when Eventhouse is not found."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {"value": []}
+
+        mock_client.get.return_value = list_response
+
+        with pytest.raises(ValueError, match="Eventhouse 'NonExistent' not found"):
+            get_kusto_query_uri(workspace_id, "NonExistent", mock_client)
+
+    def test_get_kusto_query_uri_missing_property(self, mock_client, workspace_id):
+        """Test when queryServiceUri is missing from properties."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TestEventhouse", "type": "Eventhouse", "id": "eventhouse-id-123"}]
+        }
+
+        eventhouse_response = Mock()
+        eventhouse_response.status_code = 200
+        eventhouse_response.json.return_value = {"properties": {}}
+
+        mock_client.get.side_effect = [list_response, eventhouse_response]
+
+        with pytest.raises(ValueError, match="queryServiceUri not found"):
+            get_kusto_query_uri(workspace_id, "TestEventhouse", mock_client)
+
+    def test_get_kusto_query_uri_api_error(self, mock_client, workspace_id):
+        """Test handling of API errors."""
+        mock_client.get.side_effect = Exception("API Error")
+
+        with pytest.raises(Exception, match="API Error"):
+            get_kusto_query_uri(workspace_id, "TestEventhouse", mock_client)
+
+
+class TestExecKqlCommand:
+    """Tests for exec_kql_command function."""
+
+    @pytest.fixture
+    def mock_notebookutils(self):
+        """Create a mock notebookutils object."""
+        mock_nb = Mock()
+        mock_nb.credentials.getToken.return_value = "test-token-123"
+        return mock_nb
+
+    def test_exec_kql_command_success(self, mock_notebookutils):
+        """Test successfully executing a KQL command."""
+        from unittest.mock import patch
+
+        kusto_uri = "https://test.kusto.fabric.microsoft.com"
+        kql_db_name = "TestDatabase"
+        kql_command = ".show tables"
+
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"Tables": [{"TableName": "Table1"}, {"TableName": "Table2"}]}
+
+        with patch("requests.post", return_value=mock_response) as mock_post:
+            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
+
+            assert result is not None
+            assert "Tables" in result
+            mock_post.assert_called_once()
+
+            # Verify the call arguments
+            call_args = mock_post.call_args
+            assert kusto_uri in call_args[0][0]
+            assert call_args[1]["json"]["csl"] == kql_command
+            assert call_args[1]["json"]["db"] == kql_db_name
+
+    def test_exec_kql_command_failure(self, mock_notebookutils):
+        """Test handling of KQL command failure."""
+        from unittest.mock import patch
+
+        kusto_uri = "https://test.kusto.fabric.microsoft.com"
+        kql_db_name = "TestDatabase"
+        kql_command = ".show tables"
+
+        mock_response = Mock()
+        mock_response.ok = False
+        mock_response.status_code = 400
+        mock_response.text = "Bad request"
+
+        with patch("requests.post", return_value=mock_response):
+            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
+
+            assert result is None
+
+    def test_exec_kql_command_network_error(self, mock_notebookutils):
+        """Test handling of network errors."""
+        from unittest.mock import patch
+
+        import requests
+
+        kusto_uri = "https://test.kusto.fabric.microsoft.com"
+        kql_db_name = "TestDatabase"
+        kql_command = ".show tables"
+
+        with patch("requests.post", side_effect=requests.RequestException("Network error")):
+            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
+
+            assert result is None
+
+
+class TestCreateShortcut:
+    """Tests for create_shortcut function."""
+
+    @pytest.fixture
+    def mock_notebookutils(self):
+        """Create a mock notebookutils object."""
+        mock_nb = Mock()
+        mock_nb.credentials.getToken.return_value = "test-token-123"
+        return mock_nb
+
+    def test_create_shortcut_success(self, mock_client, workspace_id, mock_notebookutils):
+        """Test successfully creating a shortcut."""
+        from unittest.mock import patch
+
+        # Mock list items response
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TargetLakehouse", "type": "Lakehouse", "id": "target-id-123"}]
+        }
+
+        mock_client.get.return_value = list_response
+        mock_client.default_base_url = "https://api.fabric.microsoft.com"
+
+        # Mock shortcut creation response
+        shortcut_response = Mock()
+        shortcut_response.ok = True
+        shortcut_response.status_code = 201
+        shortcut_response.json.return_value = {"name": "TestShortcut", "path": "Tables"}
+
+        with patch("requests.post", return_value=shortcut_response) as mock_post:
+            result = create_shortcut(
+                target_workspace_id=workspace_id,
+                target_item_name="TargetLakehouse",
+                target_item_type="Lakehouse",
+                target_path="Tables",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="source-id-456",
+                source_path="Tables/SourceTable",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
+
+            assert result is not None
+            assert result["name"] == "TestShortcut"
+            mock_post.assert_called_once()
+
+    def test_create_shortcut_target_not_found(self, mock_client, workspace_id, mock_notebookutils):
+        """Test creating shortcut when target item not found."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {"value": []}
+
+        mock_client.get.return_value = list_response
+
+        result = create_shortcut(
+            target_workspace_id=workspace_id,
+            target_item_name="NonExistent",
+            target_item_type="Lakehouse",
+            target_path="Tables",
+            target_shortcut_name="TestShortcut",
+            source_workspace_id=workspace_id,
+            source_item_id="source-id-456",
+            source_path="Tables/SourceTable",
+            client=mock_client,
+            notebookutils=mock_notebookutils,
+        )
+
+        assert result is None
+
+    def test_create_shortcut_api_error(self, mock_client, workspace_id, mock_notebookutils):
+        """Test handling of API errors."""
+        from unittest.mock import patch
+
+        import requests
+
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TargetLakehouse", "type": "Lakehouse", "id": "target-id-123"}]
+        }
+
+        mock_client.get.return_value = list_response
+        mock_client.default_base_url = "https://api.fabric.microsoft.com"
+
+        with patch("requests.post", side_effect=requests.RequestException("Network error")):
+            result = create_shortcut(
+                target_workspace_id=workspace_id,
+                target_item_name="TargetLakehouse",
+                target_item_type="Lakehouse",
+                target_path="Tables",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="source-id-456",
+                source_path="Tables/SourceTable",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
+
+            assert result is None
+
+
+class TestCreateAcceleratedShortcutInKqlDb:
+    """Tests for create_accelerated_shortcut_in_kql_db function."""
+
+    @pytest.fixture
+    def mock_notebookutils(self):
+        """Create a mock notebookutils object."""
+        mock_nb = Mock()
+        mock_nb.credentials.getToken.return_value = "test-token-123"
+
+        # Mock lakehouse properties
+        mock_properties = Mock()
+        mock_properties.properties = {
+            "oneLakeTablesPath": "abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse-id/Tables"
+        }
+        mock_nb.lakehouse.getWithProperties.return_value = mock_properties
+
+        return mock_nb
+
+    def test_create_accelerated_shortcut_success(self, mock_client, workspace_id, mock_notebookutils):
+        """Test successfully creating an accelerated shortcut."""
+        from unittest.mock import patch
+
+        # Mock item list responses (for multiple lookups)
+        kql_db_list = Mock()
+        kql_db_list.status_code = 200
+        kql_db_list.json.return_value = {
+            "value": [{"displayName": "TestKQLDB", "type": "KQLDatabase", "id": "kqldb-id-123"}]
+        }
+
+        eventhouse_list = Mock()
+        eventhouse_list.status_code = 200
+        eventhouse_list.json.return_value = {
+            "value": [{"displayName": "TestEventhouse", "type": "Eventhouse", "id": "eventhouse-id-456"}]
+        }
+
+        eventhouse_props = Mock()
+        eventhouse_props.status_code = 200
+        eventhouse_props.json.return_value = {
+            "properties": {"queryServiceUri": "https://test.kusto.fabric.microsoft.com"}
+        }
+
+        mock_client.get.side_effect = [kql_db_list, eventhouse_list, eventhouse_props, kql_db_list]
+        mock_client.default_base_url = "https://api.fabric.microsoft.com"
+
+        # Mock requests
+        mock_shortcut_response = Mock()
+        mock_shortcut_response.ok = True
+        mock_shortcut_response.status_code = 201
+        mock_shortcut_response.json.return_value = {"status": "success"}
+
+        mock_kql_response = Mock()
+        mock_kql_response.ok = True
+        mock_kql_response.status_code = 200
+        mock_kql_response.json.return_value = {"status": "success"}
+
+        with patch("requests.post", side_effect=[mock_shortcut_response, mock_kql_response, mock_kql_response]):
+            result = create_accelerated_shortcut_in_kql_db(
+                target_workspace_id=workspace_id,
+                target_kql_db_name="TestKQLDB",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="lakehouse-id-789",
+                source_path="Tables/meters",
+                target_eventhouse_name="TestEventhouse",
+                source_lakehouse_name="TestLakehouse",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
+
+            assert result is True
+
+    def test_create_accelerated_shortcut_shortcut_failure(self, mock_client, workspace_id, mock_notebookutils):
+        """Test when shortcut creation fails."""
+        from unittest.mock import patch
+
+        kql_db_list = Mock()
+        kql_db_list.status_code = 200
+        kql_db_list.json.return_value = {
+            "value": [{"displayName": "TestKQLDB", "type": "KQLDatabase", "id": "kqldb-id-123"}]
+        }
+
+        mock_client.get.return_value = kql_db_list
+        mock_client.default_base_url = "https://api.fabric.microsoft.com"
+
+        mock_shortcut_response = Mock()
+        mock_shortcut_response.ok = False
+        mock_shortcut_response.status_code = 400
+
+        with patch("requests.post", return_value=mock_shortcut_response):
+            result = create_accelerated_shortcut_in_kql_db(
+                target_workspace_id=workspace_id,
+                target_kql_db_name="TestKQLDB",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="lakehouse-id-789",
+                source_path="Tables/meters",
+                target_eventhouse_name="TestEventhouse",
+                source_lakehouse_name="TestLakehouse",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
+
+            assert result is False
+
+
+class TestGetSqlEndpoint:
+    """Tests for get_sql_endpoint function."""
+
+    def test_get_sql_endpoint_lakehouse_success(self, mock_client, workspace_id):
+        """Test successfully retrieving SQL endpoint for Lakehouse."""
+        # Mock list items response
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TestLakehouse", "type": "Lakehouse", "id": "lakehouse-id-123"}]
+        }
+
+        # Mock lakehouse properties response
+        lakehouse_response = Mock()
+        lakehouse_response.status_code = 200
+        lakehouse_response.json.return_value = {
+            "properties": {"connectionString": "test-lakehouse.datawarehouse.fabric.microsoft.com"}
+        }
+
+        mock_client.get.side_effect = [list_response, lakehouse_response]
+
+        result = get_sql_endpoint(workspace_id, "TestLakehouse", "Lakehouse", mock_client)
+
+        assert result == "test-lakehouse.datawarehouse.fabric.microsoft.com"
+
+    def test_get_sql_endpoint_warehouse_success(self, mock_client, workspace_id):
+        """Test successfully retrieving SQL endpoint for Warehouse."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TestWarehouse", "type": "Warehouse", "id": "warehouse-id-456"}]
+        }
+
+        warehouse_response = Mock()
+        warehouse_response.status_code = 200
+        warehouse_response.json.return_value = {
+            "properties": {"connectionString": "test-warehouse.datawarehouse.fabric.microsoft.com"}
+        }
+
+        mock_client.get.side_effect = [list_response, warehouse_response]
+
+        result = get_sql_endpoint(workspace_id, "TestWarehouse", "Warehouse", mock_client)
+
+        assert result == "test-warehouse.datawarehouse.fabric.microsoft.com"
+
+    def test_get_sql_endpoint_item_not_found(self, mock_client, workspace_id):
+        """Test when item is not found."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {"value": []}
+
+        mock_client.get.return_value = list_response
+
+        result = get_sql_endpoint(workspace_id, "NonExistent", "Lakehouse", mock_client)
+
+        assert result is None
+
+    def test_get_sql_endpoint_unsupported_type(self, mock_client, workspace_id):
+        """Test with unsupported item type."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TestNotebook", "type": "Notebook", "id": "notebook-id-123"}]
+        }
+
+        mock_client.get.return_value = list_response
+
+        result = get_sql_endpoint(workspace_id, "TestNotebook", "Notebook", mock_client)
+
+        assert result is None
+
+    def test_get_sql_endpoint_missing_connection_string(self, mock_client, workspace_id):
+        """Test when connectionString is missing from properties."""
+        list_response = Mock()
+        list_response.status_code = 200
+        list_response.json.return_value = {
+            "value": [{"displayName": "TestLakehouse", "type": "Lakehouse", "id": "lakehouse-id-123"}]
+        }
+
+        lakehouse_response = Mock()
+        lakehouse_response.status_code = 200
+        lakehouse_response.json.return_value = {"properties": {}}
+
+        mock_client.get.side_effect = [list_response, lakehouse_response]
+
+        result = get_sql_endpoint(workspace_id, "TestLakehouse", "Lakehouse", mock_client)
+
+        assert result is None
+
+
+class TestExecSqlQuery:
+    """Tests for exec_sql_query function."""
+
+    @pytest.fixture
+    def mock_notebookutils(self):
+        """Create a mock notebookutils object."""
+        mock_nb = Mock()
+        mock_nb.credentials.getToken.return_value = "test-token-123"
+        return mock_nb
+
+    def test_exec_sql_query_success(self, mock_notebookutils):
+        """Test successfully executing a SQL query."""
+        from unittest.mock import patch
+
+        sql_endpoint = "test.datawarehouse.fabric.microsoft.com"
+        database_name = "TestDatabase"
+        sql_query = "SELECT * FROM meters"
+
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "columns": ["meter_id", "meter_type", "max_amps"],
+            "rows": [["MTR001", "residential", 200], ["MTR002", "commercial", 400]],
+        }
+
+        with patch("requests.post", return_value=mock_response) as mock_post:
+            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+
+            assert result is not None
+            assert len(result) == 2
+            assert result[0]["meter_id"] == "MTR001"
+            assert result[0]["meter_type"] == "residential"
+            assert result[1]["meter_id"] == "MTR002"
+            mock_post.assert_called_once()
+
+    def test_exec_sql_query_no_columns(self, mock_notebookutils):
+        """Test executing query that returns rows without column metadata."""
+        from unittest.mock import patch
+
+        sql_endpoint = "test.datawarehouse.fabric.microsoft.com"
+        database_name = "TestDatabase"
+        sql_query = "DELETE FROM temp_table"
+
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"rows": []}
+
+        with patch("requests.post", return_value=mock_response):
+            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+
+            assert result == []
+
+    def test_exec_sql_query_failure(self, mock_notebookutils):
+        """Test handling of SQL query failure."""
+        from unittest.mock import patch
+
+        sql_endpoint = "test.datawarehouse.fabric.microsoft.com"
+        database_name = "TestDatabase"
+        sql_query = "SELECT * FROM invalid_table"
+
+        mock_response = Mock()
+        mock_response.ok = False
+        mock_response.status_code = 400
+        mock_response.text = "Invalid object name 'invalid_table'"
+
+        with patch("requests.post", return_value=mock_response):
+            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+
+            assert result is None
+
+    def test_exec_sql_query_network_error(self, mock_notebookutils):
+        """Test handling of network errors."""
+        from unittest.mock import patch
+
+        import requests
+
+        sql_endpoint = "test.datawarehouse.fabric.microsoft.com"
+        database_name = "TestDatabase"
+        sql_query = "SELECT * FROM meters"
+
+        with patch("requests.post", side_effect=requests.RequestException("Network error")):
+            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+
+            assert result is None
+
+    def test_exec_sql_query_custom_timeout(self, mock_notebookutils):
+        """Test executing query with custom timeout."""
+        from unittest.mock import patch
+
+        sql_endpoint = "test.datawarehouse.fabric.microsoft.com"
+        database_name = "TestDatabase"
+        sql_query = "SELECT * FROM large_table"
+
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"columns": ["id"], "rows": [[1]]}
+
+        with patch("requests.post", return_value=mock_response) as mock_post:
+            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils, timeout=120)
+
+            assert result is not None
+            # Verify timeout was passed
+            assert mock_post.call_args[1]["timeout"] == 120
 
 
 if __name__ == "__main__":

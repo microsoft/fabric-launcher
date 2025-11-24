@@ -1,4 +1,4 @@
-# fabric-launcher
+# 🚀 fabric-launcher
 
 A Python library to automate deployment of Microsoft Fabric solutions from GitHub repositories into Fabric workspaces. Fabric-launcher is designed to run within Fabric notebooks. It is ideal for simple, automated deployment for solution accelerators, demos, tutorials, and samples.
 
