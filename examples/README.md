@@ -21,18 +21,23 @@ Before running these examples, ensure you have:
 
 ## Example Files
 
-### `accessing_launcher_properties.py`
+### `accessing_launcher_properties_examples.py`
 Demonstrates how to access deployment metadata, item lists, and workspace information after deployment.
 
 **Prerequisites**: GitHub repository URL
 
-### `advanced_usage.py`
+### `advanced_deployment_examples.py`
 Shows advanced features including custom configurations, error handling, and workspace recreation.
 
 **Prerequisites**: GitHub repository URL, workspace access
 
-### `production_workflow.py`
-Complete production deployment workflow with validation, backup, and rollback capabilities.
+### `basic_deployment_examples.py`
+Simple deployment workflows and basic usage patterns.
+
+**Prerequisites**: GitHub repository URL
+
+### `staged_deployment_examples.py`
+Demonstrates multi-stage deployments (dev → test → prod) with environment-specific configurations.
 
 **Prerequisites**: GitHub repository URL, production workspace access
 

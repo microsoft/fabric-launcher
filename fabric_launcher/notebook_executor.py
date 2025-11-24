@@ -72,10 +72,31 @@ class NotebookExecutor:
             response = self.client.post(url, json=execution_payload)
 
             if response.status_code in [200, 201, 202]:
-                result = response.json()
-                job_id = result.get("id", "Unknown")
+                # Extract job ID from Location header (standard for 202 responses)
+                job_id = "Unknown"
+                location = response.headers.get("Location", "")
+
+                if location:
+                    # Location format: https://api.fabric.microsoft.com/v1/workspaces/{workspaceId}/items/{itemId}/jobs/instances/{jobId}
+                    # Extract the job ID from the last segment
+                    try:
+                        job_id = location.rstrip("/").split("/")[-1]
+                    except Exception:
+                        job_id = "Unknown"
+
+                # Fallback: try to parse JSON response if available
+                if job_id == "Unknown" and response.text and response.text.strip():
+                    try:
+                        result = response.json()
+                        job_id = result.get("id", "Unknown")
+                    except Exception:
+                        pass
+
                 print("✅ Notebook execution triggered successfully")
-                print(f"🆔 Job ID: {job_id}")
+                if job_id != "Unknown":
+                    print(f"🆔 Job ID: {job_id}")
+                else:
+                    print("ℹ️ Job accepted - check notebook for execution status")
 
                 return {
                     "success": True,
@@ -83,6 +104,7 @@ class NotebookExecutor:
                     "notebook_id": notebook_id,
                     "notebook_name": notebook_name,
                     "workspace_id": target_workspace_id,
+                    "location": location,
                 }
             error_msg = f"Failed to trigger notebook execution: {response.status_code} - {response.text}"
             print(f"❌ {error_msg}")
@@ -93,37 +115,110 @@ class NotebookExecutor:
             raise
 
     def run_notebook_synchronous(
-        self, notebook_path: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
+        self, notebook_name: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
     ) -> dict[str, Any]:
         """
-        Run a notebook synchronously using notebookutils (blocks until completion).
+        Run a notebook synchronously (blocks until completion).
+
+        Uses run_notebook to trigger execution and polls status until terminal state.
 
         Args:
-            notebook_path: Path to the notebook (can be relative or absolute)
+            notebook_name: Name of the notebook to execute
             parameters: Dictionary of parameters to pass to the notebook
             timeout_seconds: Timeout for notebook execution (default: 3600)
 
         Returns:
-            Dictionary with execution result information
+            Dictionary with execution result information including final status
 
         Raises:
-            Exception: If notebook execution fails
+            Exception: If notebook execution fails or times out
         """
+        import time
+
         try:
-            print(f"🚀 Running notebook synchronously: {notebook_path}")
+            print(f"🚀 Running notebook synchronously: {notebook_name}")
 
-            if parameters:
-                print(f"📝 Parameters: {parameters}")
-                result = self.notebookutils.notebook.run(notebook_path, timeout_seconds, parameters)
-            else:
-                result = self.notebookutils.notebook.run(notebook_path, timeout_seconds)
+            # Trigger notebook execution
+            result = self.run_notebook(
+                notebook_name=notebook_name,
+                parameters=parameters,
+                timeout_seconds=timeout_seconds
+            )
 
-            print("✅ Notebook execution completed successfully")
+            job_id = result.get("job_id")
+            notebook_id = result.get("notebook_id")
+            location = result.get("location")
 
-            return {"success": True, "result": result, "notebook_path": notebook_path}
+            if not job_id or job_id == "Unknown" or not location or not notebook_id:
+                raise Exception("Could not retrieve job ID or notebook ID from notebook execution")
+
+            # Monitor job status until terminal state
+            terminal_statuses = ["Completed", "Failed", "Cancelled", "Canceled"]
+            poll_interval = 5  # seconds
+            elapsed_time = 0
+
+            print(f"\n⏳ Monitoring job status (polling every {poll_interval} seconds)...")
+
+            while elapsed_time < timeout_seconds:
+                time.sleep(poll_interval)
+                elapsed_time += poll_interval
+
+                try:
+                    status_data = self.get_job_status(
+                        notebook_id=notebook_id,
+                        job_id=job_id
+                    )
+
+                    current_status = status_data.get("status", "Unknown")
+                    print(f"📊 Status: {current_status} (elapsed: {elapsed_time}s)")
+
+                    # Check if job reached terminal status
+                    if current_status in terminal_statuses:
+                        print(f"\n🎯 Job reached terminal status: {current_status}")
+
+                        # Display additional details
+                        if "startTimeUtc" in status_data:
+                            print(f"🕒 Start Time: {status_data['startTimeUtc']}")
+
+                        # Show end time or current time if not available
+                        end_time = status_data.get("endTimeUtc")
+                        if end_time:
+                            print(f"🕒 End Time: {end_time}")
+                        else:
+                            from datetime import datetime
+                            current_time = datetime.utcnow().isoformat() + "Z"
+                            print(f"🕒 End Time: {current_time} (estimated)")
+
+                        if current_status == "Completed":
+                            print("✅ Notebook execution completed successfully!")
+                            return {
+                                "success": True,
+                                "status": current_status,
+                                "notebook_name": notebook_name,
+                                "job_id": job_id,
+                                "status_data": status_data
+                            }
+                        # Failed, Cancelled, or Canceled
+                        failure_reason = status_data.get("failureReason", "No reason provided")
+                        print(f"❌ Failure Reason: {failure_reason}")
+                        raise Exception(f"Notebook execution {current_status.lower()}: {failure_reason}")
+
+                except Exception as status_error:
+                    if "terminal status" in str(status_error) or "execution" in str(status_error):
+                        # Re-raise execution failures
+                        raise
+                    # Log but continue on status check errors
+                    print(f"⚠️ Error checking status: {status_error}")
+                    continue
+
+            # Timeout reached
+            raise Exception(
+                f"Notebook execution timed out after {timeout_seconds} seconds. "
+                f"Job ID: {job_id}. Check status manually using get_job_status()."
+            )
 
         except Exception as e:
-            print(f"❌ Error running notebook: {e}")
+            print(f"❌ Error running notebook synchronously: {e}")
             raise
 
     def get_job_status(self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None) -> dict[str, Any]:
@@ -131,8 +226,8 @@ class NotebookExecutor:
         Get the status of a notebook job.
 
         Args:
-            notebook_id: ID of the notebook
-            job_id: ID of the job
+            notebook_id: ID of the notebook (item ID)
+            job_id: ID of the job instance
             workspace_id: Target workspace ID (uses current workspace if None)
 
         Returns:
@@ -141,7 +236,8 @@ class NotebookExecutor:
         try:
             target_workspace_id = workspace_id or self.workspace_id
 
-            url = f"v1/workspaces/{target_workspace_id}/notebooks/{notebook_id}/jobs/instances/{job_id}"
+            # Use the item job instance endpoint (generic for all item types)
+            url = f"v1/workspaces/{target_workspace_id}/items/{notebook_id}/jobs/instances/{job_id}"
             response = self.client.get(url)
 
             if response.status_code == 200:
@@ -152,31 +248,4 @@ class NotebookExecutor:
             print(f"❌ Error getting job status: {e}")
             raise
 
-    def cancel_job(self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None) -> bool:
-        """
-        Cancel a running notebook job.
 
-        Args:
-            notebook_id: ID of the notebook
-            job_id: ID of the job
-            workspace_id: Target workspace ID (uses current workspace if None)
-
-        Returns:
-            True if cancellation was successful
-        """
-        try:
-            target_workspace_id = workspace_id or self.workspace_id
-
-            print(f"🛑 Cancelling job: {job_id}")
-            url = f"v1/workspaces/{target_workspace_id}/notebooks/{notebook_id}/jobs/instances/{job_id}/cancel"
-            response = self.client.post(url, json={})
-
-            if response.status_code in [200, 202]:
-                print("✅ Job cancellation requested successfully")
-                return True
-            print(f"⚠️ Failed to cancel job: {response.status_code}")
-            return False
-
-        except Exception as e:
-            print(f"❌ Error cancelling job: {e}")
-            raise

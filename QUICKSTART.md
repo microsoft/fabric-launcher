@@ -192,6 +192,7 @@ notebookutils.session.restartPython()
 ## Complete Examples
 
 See `examples/` directory:
-- `example_usage.py` - Basic workflow
-- `advanced_usage.py` - Advanced features
-- `production_workflow.py` - Production patterns
+- `basic_deployment_examples.py` - Basic workflow
+- `advanced_deployment_examples.py` - Advanced features
+- `staged_deployment_examples.py` - Multi-stage deployment patterns
+- `post_deployment_utils_examples.py` - Post-deployment utilities

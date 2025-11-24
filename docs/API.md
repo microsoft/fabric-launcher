@@ -133,10 +133,31 @@ upload_files_to_lakehouse(
 
 #### run_notebook()
 
-Execute a notebook asynchronously.
+Execute a notebook asynchronously (non-blocking).
 
 ```python
 run_notebook(
+    notebook_name: str,
+    parameters: Optional[Dict[str, Any]] = None,
+    workspace_id: Optional[str] = None,
+    timeout_seconds: int = 3600
+) -> dict
+```
+
+**Parameters:**
+- `notebook_name`: Name of notebook to execute
+- `parameters`: Dictionary of parameters to pass to notebook
+- `workspace_id`: Target workspace ID (uses current if None)
+- `timeout_seconds`: Maximum execution time
+
+**Returns:** Dictionary with job_id, notebook_id, and location
+
+#### run_notebook_synchronous()
+
+Execute a notebook synchronously (blocking until completion).
+
+```python
+run_notebook_synchronous(
     notebook_name: str,
     parameters: Optional[Dict[str, Any]] = None,
     timeout_seconds: int = 3600
@@ -148,7 +169,7 @@ run_notebook(
 - `parameters`: Dictionary of parameters to pass to notebook
 - `timeout_seconds`: Maximum execution time
 
-**Returns:** Dictionary with job_id and status
+**Returns:** Dictionary with result and success status
 
 ## Post-Deployment Utilities
 

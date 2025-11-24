@@ -577,20 +577,6 @@ class FabricLauncher:
 
             if report:
                 report.add_step("Deployment", "success", "Workspace artifacts deployed")
-                # Add deployed items to report from workspace
-                try:
-                    import sempy.fabric as fabric
-
-                    workspace_items = fabric.list_items(workspace=self.workspace_id)
-                    if not workspace_items.empty:
-                        for _, item in workspace_items.iterrows():
-                            report.add_deployed_item(
-                                item_name=item.get("Display Name", "Unknown"),
-                                item_type=item.get("Type", "Unknown"),
-                                status="success",
-                            )
-                except Exception as e:
-                    print(f"⚠️ Warning: Could not retrieve deployed items for report: {e}")
         except Exception as e:
             if report:
                 report.add_step("Deployment", "error", str(e))
@@ -815,14 +801,14 @@ class FabricLauncher:
             timeout_seconds=timeout_seconds,
         )
 
-    def run_notebook_sync(
-        self, notebook_path: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
+    def run_notebook_synchronous(
+        self, notebook_name: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
     ) -> dict[str, Any]:
         """
         Run a notebook synchronously (blocks until completion).
 
         Args:
-            notebook_path: Path to the notebook
+            notebook_name: Name of the notebook to execute
             parameters: Dictionary of parameters to pass to the notebook
             timeout_seconds: Timeout for notebook execution
 
@@ -830,7 +816,7 @@ class FabricLauncher:
             Dictionary with execution result information
         """
         return self.notebook_executor.run_notebook_synchronous(
-            notebook_path=notebook_path, parameters=parameters, timeout_seconds=timeout_seconds
+            notebook_name=notebook_name, parameters=parameters, timeout_seconds=timeout_seconds
         )
 
     def get_notebook_job_status(
@@ -849,19 +835,7 @@ class FabricLauncher:
         """
         return self.notebook_executor.get_job_status(notebook_id=notebook_id, job_id=job_id, workspace_id=workspace_id)
 
-    def cancel_notebook_job(self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None) -> bool:
-        """
-        Cancel a running notebook job.
 
-        Args:
-            notebook_id: ID of the notebook
-            job_id: ID of the job
-            workspace_id: Target workspace ID (uses current if None)
-
-        Returns:
-            True if cancellation was successful
-        """
-        return self.notebook_executor.cancel_job(notebook_id=notebook_id, job_id=job_id, workspace_id=workspace_id)
 
     def validate_deployment(
         self,

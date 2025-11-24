@@ -69,9 +69,10 @@ launcher.download_and_deploy(
 
 See the `examples/` directory for complete working code:
 
-- **[basic_usage.py](examples/example_usage.py)** - Simple deployment workflow
-- **[advanced_usage.py](examples/advanced_usage.py)** - Configuration files, validation, reporting
-- **[production_workflow.py](examples/production_workflow.py)** - Production-ready patterns
+- **[basic_deployment_examples.py](examples/basic_deployment_examples.py)** - Simple deployment workflow
+- **[advanced_deployment_examples.py](examples/advanced_deployment_examples.py)** - Configuration files, validation, reporting
+- **[staged_deployment_examples.py](examples/staged_deployment_examples.py)** - Multi-stage deployment patterns
+- **[accessing_launcher_properties_examples.py](examples/accessing_launcher_properties_examples.py)** - Accessing deployment metadata
 
 ## Documentation
 
