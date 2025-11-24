@@ -21,6 +21,14 @@ from .file_operations import LakehouseFileManager
 from .github_downloader import GitHubDownloader
 from .launcher import FabricLauncher
 from .notebook_executor import NotebookExecutor
+from .post_deployment_utils import (
+    create_or_update_fabric_item,
+    get_folder_id_by_name,
+    get_item_definition_from_repo,
+    move_item_to_folder,
+    replace_logical_ids,
+    scan_logical_ids,
+)
 
 __all__ = [
     "FabricLauncher",
@@ -32,4 +40,11 @@ __all__ = [
     "DeploymentConfig",
     "DeploymentValidator",
     "DeploymentReport",
+    # Post-deployment utilities
+    "get_folder_id_by_name",
+    "get_item_definition_from_repo",
+    "scan_logical_ids",
+    "replace_logical_ids",
+    "create_or_update_fabric_item",
+    "move_item_to_folder",
 ]

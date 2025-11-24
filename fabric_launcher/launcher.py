@@ -223,6 +223,107 @@ class FabricLauncher:
             self._validator = DeploymentValidator(workspace_id=self.workspace_id, notebookutils=self.notebookutils)
         return self._validator
 
+    @property
+    def repository_path(self) -> Optional[str]:
+        """
+        Get the path where the repository was extracted.
+
+        Returns:
+            Path to extracted repository, or None if not yet deployed
+
+        Example:
+            >>> launcher.download_and_deploy(repo_owner="myorg", repo_name="my-solution")
+            >>> print(f"Repository extracted to: {launcher.repository_path}")
+        """
+        if self._fabric_deployer:
+            return self._fabric_deployer.repository_directory
+        return None
+
+    @property
+    def workspace_directory(self) -> Optional[str]:
+        """
+        Get the path to the workspace folder within the extracted repository.
+
+        This is the directory containing the Fabric workspace artifacts that were
+        deployed. Useful for accessing workspace item definitions post-deployment.
+
+        Returns:
+            Path to workspace directory, or None if not yet deployed
+
+        Example:
+            >>> launcher.download_and_deploy(repo_owner="myorg", repo_name="my-solution")
+            >>> print(f"Workspace artifacts in: {launcher.workspace_directory}")
+        """
+        if self._fabric_deployer and hasattr(self._fabric_deployer, "repository_directory"):
+            return self._fabric_deployer.repository_directory
+        return None
+
+    @property
+    def deployment_config(self) -> Optional[dict]:
+        """
+        Get the current deployment configuration.
+
+        Returns:
+            Dictionary containing configuration settings, or None if no config loaded
+
+        Example:
+            >>> launcher = FabricLauncher(notebookutils, config_file="config.yaml")
+            >>> config = launcher.deployment_config
+            >>> print(f"GitHub repo: {config['github']['repo_owner']}/{config['github']['repo_name']}")
+        """
+        if self.config:
+            return {
+                "github": self.config.get_github_config(environment=self.environment),
+                "deployment": self.config.get_deployment_config(environment=self.environment),
+                "data": self.config.get_data_config(environment=self.environment),
+                "notebook": self.config.get_notebook_config(environment=self.environment),
+            }
+        return None
+
+    def get_data_folder_path(self, folder_name: str) -> Optional[str]:
+        """
+        Get the full path to a data folder within the extracted repository.
+
+        This is useful for accessing downloaded data files after repository extraction.
+
+        Args:
+            folder_name: Name of the folder (e.g., "data", "samples")
+
+        Returns:
+            Full path to the folder, or None if repository not downloaded
+
+        Example:
+            >>> launcher.download_and_deploy(repo_owner="myorg", repo_name="my-solution")
+            >>> data_path = launcher.get_data_folder_path("data")
+            >>> print(f"Data files located at: {data_path}")
+        """
+        if self.repository_path:
+            from pathlib import Path
+
+            folder_path = Path(self.repository_path) / folder_name
+            return str(folder_path) if folder_path.exists() else None
+        return None
+
+    def list_data_folders(self) -> list[str]:
+        """
+        List all directories in the extracted repository.
+
+        Returns:
+            List of folder names in the repository root, empty list if not downloaded
+
+        Example:
+            >>> launcher.download_and_deploy(repo_owner="myorg", repo_name="my-solution")
+            >>> folders = launcher.list_data_folders()
+            >>> print(f"Available folders: {', '.join(folders)}")
+        """
+        if self.repository_path:
+            from pathlib import Path
+
+            repo_path = Path(self.repository_path)
+            if repo_path.exists():
+                return [item.name for item in repo_path.iterdir() if item.is_dir()]
+        return []
+
     def download_repository(
         self,
         repo_owner: str,

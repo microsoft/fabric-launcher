@@ -129,6 +129,24 @@ launcher = FabricLauncher(notebookutils, allow_non_empty_workspace=True)
 
 See [QUICKSTART.md](QUICKSTART.md) for detailed syntax and parameters.
 
+## Post-Deployment Utilities
+
+The `fabric_launcher.post_deployment_utils` module provides utility functions for common post-deployment tasks:
+
+- **`get_folder_id_by_name()`** - Find folders by display name
+- **`get_item_definition_from_repo()`** - Load item definitions from repository
+- **`scan_logical_ids()`** - Map logical IDs to actual workspace IDs
+- **`replace_logical_ids()`** - Replace logical IDs in definitions
+- **`create_or_update_fabric_item()`** - Generic item creation with logical ID replacement
+- **`move_item_to_folder()`** - Organize items into folders
+
+These helpers are useful for:
+- Deploying custom item types not yet supported by fabric-cicd
+- Handling cross-item references and logical ID remapping
+- Post-deployment organization and configuration
+
+See [examples/post_deployment_utils_examples.py](examples/post_deployment_utils_examples.py) for usage examples.
+
 ## Development and Testing
 
 ```bash
