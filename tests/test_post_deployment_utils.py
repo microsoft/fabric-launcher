@@ -459,9 +459,10 @@ class TestExecKqlCommand:
         mock_response.status_code = 400
         mock_response.text = "Bad request"
 
-        with patch("requests.post", return_value=mock_response):
-            with pytest.raises(RuntimeError, match="KQL command failed: HTTP 400"):
-                exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
+        with patch("requests.post", return_value=mock_response), pytest.raises(
+            RuntimeError, match="KQL command failed: HTTP 400"
+        ):
+            exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
     def test_exec_kql_command_network_error(self, mock_notebookutils):
         """Test handling of network errors."""
@@ -473,9 +474,10 @@ class TestExecKqlCommand:
         kql_db_name = "TestDatabase"
         kql_command = ".show tables"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            with pytest.raises(requests.RequestException):
-                exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
+        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
+            requests.RequestException
+        ):
+            exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
 
 class TestCreateShortcut:
@@ -563,20 +565,21 @@ class TestCreateShortcut:
         mock_client.get.return_value = list_response
         mock_client.default_base_url = "https://api.fabric.microsoft.com"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            with pytest.raises(requests.RequestException):
-                create_shortcut(
-                    target_workspace_id=workspace_id,
-                    target_item_name="TargetLakehouse",
-                    target_item_type="Lakehouse",
-                    target_path="Tables",
-                    target_shortcut_name="TestShortcut",
-                    source_workspace_id=workspace_id,
-                    source_item_id="source-id-456",
-                    source_path="Tables/SourceTable",
-                    client=mock_client,
-                    notebookutils=mock_notebookutils,
-                )
+        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
+            requests.RequestException
+        ):
+            create_shortcut(
+                target_workspace_id=workspace_id,
+                target_item_name="TargetLakehouse",
+                target_item_type="Lakehouse",
+                target_path="Tables",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="source-id-456",
+                source_path="Tables/SourceTable",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
 
 
 class TestCreateAcceleratedShortcutInKqlDb:
@@ -620,7 +623,20 @@ class TestCreateAcceleratedShortcutInKqlDb:
             "properties": {"queryServiceUri": "https://test.kusto.fabric.microsoft.com"}
         }
 
-        mock_client.get.side_effect = [kql_db_list, eventhouse_list, eventhouse_props, kql_db_list]
+        # Mock source lakehouse lookup
+        source_lakehouse_list = Mock()
+        source_lakehouse_list.status_code = 200
+        source_lakehouse_list.json.return_value = {
+            "value": [{"displayName": "TestLakehouse", "type": "Lakehouse", "id": "lakehouse-id-789"}]
+        }
+
+        mock_client.get.side_effect = [
+            source_lakehouse_list,  # Source lakehouse lookup
+            kql_db_list,  # Target KQL DB lookup for shortcut creation
+            eventhouse_list,  # Eventhouse lookup
+            eventhouse_props,  # Eventhouse properties
+            kql_db_list,  # KQL DB lookup for path construction
+        ]
         mock_client.default_base_url = "https://api.fabric.microsoft.com"
 
         # Mock requests
@@ -640,7 +656,6 @@ class TestCreateAcceleratedShortcutInKqlDb:
                 target_kql_db_name="TestKQLDB",
                 target_shortcut_name="TestShortcut",
                 source_workspace_id=workspace_id,
-                source_item_id="lakehouse-id-789",
                 source_path="Tables/meters",
                 target_eventhouse_name="TestEventhouse",
                 source_lakehouse_name="TestLakehouse",
@@ -654,13 +669,19 @@ class TestCreateAcceleratedShortcutInKqlDb:
         """Test when shortcut creation fails."""
         from unittest.mock import patch
 
+        source_lakehouse_list = Mock()
+        source_lakehouse_list.status_code = 200
+        source_lakehouse_list.json.return_value = {
+            "value": [{"displayName": "TestLakehouse", "type": "Lakehouse", "id": "lakehouse-id-789"}]
+        }
+
         kql_db_list = Mock()
         kql_db_list.status_code = 200
         kql_db_list.json.return_value = {
             "value": [{"displayName": "TestKQLDB", "type": "KQLDatabase", "id": "kqldb-id-123"}]
         }
 
-        mock_client.get.return_value = kql_db_list
+        mock_client.get.side_effect = [source_lakehouse_list, kql_db_list]
         mock_client.default_base_url = "https://api.fabric.microsoft.com"
 
         mock_shortcut_response = Mock()
@@ -673,7 +694,6 @@ class TestCreateAcceleratedShortcutInKqlDb:
                 target_kql_db_name="TestKQLDB",
                 target_shortcut_name="TestShortcut",
                 source_workspace_id=workspace_id,
-                source_item_id="lakehouse-id-789",
                 source_path="Tables/meters",
                 target_eventhouse_name="TestEventhouse",
                 source_lakehouse_name="TestLakehouse",
@@ -838,9 +858,10 @@ class TestExecSqlQuery:
         mock_response.status_code = 400
         mock_response.text = "Invalid object name 'invalid_table'"
 
-        with patch("requests.post", return_value=mock_response):
-            with pytest.raises(RuntimeError, match="SQL query failed: HTTP 400"):
-                exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+        with patch("requests.post", return_value=mock_response), pytest.raises(
+            RuntimeError, match="SQL query failed: HTTP 400"
+        ):
+            exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 
     def test_exec_sql_query_network_error(self, mock_notebookutils):
         """Test handling of network errors."""
@@ -852,9 +873,10 @@ class TestExecSqlQuery:
         database_name = "TestDatabase"
         sql_query = "SELECT * FROM meters"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            with pytest.raises(requests.RequestException):
-                exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
+        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
+            requests.RequestException
+        ):
+            exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 
     def test_exec_sql_query_custom_timeout(self, mock_notebookutils):
         """Test executing query with custom timeout."""

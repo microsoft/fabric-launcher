@@ -716,7 +716,6 @@ def create_accelerated_shortcut_in_kql_db(
     target_kql_db_name: str,
     target_shortcut_name: str,
     source_workspace_id: str,
-    source_item_id: str,
     source_path: str,
     target_eventhouse_name: str,
     source_lakehouse_name: str,
@@ -736,10 +735,9 @@ def create_accelerated_shortcut_in_kql_db(
         target_kql_db_name: Name of the KQL Database
         target_shortcut_name: Name for the shortcut and external table
         source_workspace_id: Workspace ID containing the source Lakehouse
-        source_item_id: ID of the source Lakehouse
         source_path: Path to the table in the Lakehouse (e.g., "Tables/MyTable")
         target_eventhouse_name: Name of the Eventhouse containing the KQL Database
-        source_lakehouse_name: Name of the source Lakehouse (for path resolution)
+        source_lakehouse_name: Name of the source Lakehouse
         client: Fabric REST client instance
         notebookutils: Notebook utilities for authentication and path resolution
 
@@ -752,7 +750,6 @@ def create_accelerated_shortcut_in_kql_db(
         ...     target_kql_db_name="MyKQLDatabase",
         ...     target_shortcut_name="Meters",
         ...     source_workspace_id=workspace_id,
-        ...     source_item_id=lakehouse_id,
         ...     source_path="Tables/meters",
         ...     target_eventhouse_name="MyEventhouse",
         ...     source_lakehouse_name="ReferenceDataLH",
@@ -763,7 +760,30 @@ def create_accelerated_shortcut_in_kql_db(
     try:
         logger.info(f"Creating accelerated shortcut '{target_shortcut_name}' in KQL Database '{target_kql_db_name}'")
 
-        # Step 1: Create shortcut
+        # Step 1: Resolve source Lakehouse ID
+        logger.debug(f"Resolving source Lakehouse '{source_lakehouse_name}'...")
+        list_url = f"v1/workspaces/{source_workspace_id}/items"
+        list_response = client.get(list_url)
+
+        if list_response.status_code != 200:
+            logger.error(f"Failed to list items in source workspace: {list_response.status_code}")
+            return False
+
+        items = list_response.json().get("value", [])
+        source_item_id = None
+
+        for item in items:
+            if item.get("displayName") == source_lakehouse_name and item.get("type") == "Lakehouse":
+                source_item_id = item.get("id")
+                break
+
+        if not source_item_id:
+            logger.error(f"Source Lakehouse '{source_lakehouse_name}' not found in workspace")
+            return False
+
+        logger.debug(f"Found source Lakehouse (ID: {source_item_id})")
+
+        # Step 2: Create shortcut
         target_path = "Shortcut"  # Fixed value for KQL Database
 
         shortcut_result = create_shortcut(

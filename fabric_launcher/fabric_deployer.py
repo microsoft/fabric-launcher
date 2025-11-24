@@ -127,6 +127,7 @@ class FabricDeployer:
         self.notebookutils = notebookutils
         self.allow_non_empty_workspace = allow_non_empty_workspace
         self.fix_zero_logical_ids = fix_zero_logical_ids
+        self._deployment_session_started = False  # Track if first deployment has occurred
 
         # Configure fabric-cicd constants
         fabric_cicd.constants.DEFAULT_API_ROOT_URL = api_root_url
@@ -274,6 +275,10 @@ class FabricDeployer:
         """
         Deploy Fabric items to the workspace.
 
+        For staged deployments, workspace validation only occurs on the first stage.
+        Subsequent stages in the same deployment session skip validation since the
+        workspace is expected to contain items from previous stages.
+
         Args:
             item_types: List of item types to deploy. If None, deploys all items.
                        Example types: "Lakehouse", "Notebook", "Eventstream", "KQLDatabase"
@@ -291,10 +296,17 @@ class FabricDeployer:
         else:
             print("⚠️ Skipping logicalId validation (fix_zero_logical_ids=False)")
 
-        # Validate workspace is empty (unless explicitly allowed)
+        # Validate workspace is empty (unless explicitly allowed or already validated in this session)
         if not self.allow_non_empty_workspace:
-            print("🔍 Validating workspace is empty...")
-            self._validate_workspace_is_empty()
+            if not self._deployment_session_started:
+                # First deployment in this session - validate workspace is empty
+                print("🔍 Validating workspace is empty...")
+                self._validate_workspace_is_empty()
+                self._deployment_session_started = True
+                print("✅ Workspace validation passed - subsequent stages will skip validation")
+            else:
+                # Subsequent deployment in same session - skip validation
+                print("ℹ️ Skipping workspace validation (already validated in this deployment session)")
         else:
             print("⚠️ Skipping workspace validation (allow_non_empty_workspace=True)")
 

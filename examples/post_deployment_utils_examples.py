@@ -205,9 +205,9 @@ def eventhouse_sql_examples():
     workspace_id = fabric.resolve_workspace_id()
 
     # Define your resources (adjust these to match your environment)
-    EVENTHOUSE_NAME = "PowerUtilitiesEH"
-    KQL_DB_NAME = "PowerUtilitiesEH"
-    SOURCE_LAKEHOUSE_NAME = "ReferenceDataLH"
+    eventhouse_name = "PowerUtilitiesEH"
+    kql_db_name = "PowerUtilitiesEH"
+    source_lakehouse_name = "ReferenceDataLH"
 
     print("\n" + "=" * 60)
     print("Eventhouse and SQL Operations Examples")
@@ -216,7 +216,7 @@ def eventhouse_sql_examples():
     # Example 1: Get Kusto Query URI
     print("\n--- Example 1: Get Kusto Query URI ---")
     try:
-        kusto_uri = get_kusto_query_uri(workspace_id, EVENTHOUSE_NAME, client)
+        kusto_uri = get_kusto_query_uri(workspace_id, eventhouse_name, client)
         print(f"✅ Kusto Query URI: {kusto_uri}")
     except Exception as e:
         print(f"❌ Error: {e}")
@@ -231,7 +231,7 @@ def eventhouse_sql_examples():
             # Show tables
             kql_command = ".show tables"
             print(f"Executing: {kql_command}")
-            result = exec_kql_command(kusto_uri, KQL_DB_NAME, kql_command, notebookutils)
+            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, notebookutils)
             if result:
                 print("✅ Command executed successfully")
         except Exception as e:
@@ -243,16 +243,16 @@ def eventhouse_sql_examples():
         print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
     else:
         try:
-            SOURCE_LAKEHOUSE_ID = fabric.resolve_item_id(SOURCE_LAKEHOUSE_NAME, "Lakehouse")
+            source_lakehouse_id = fabric.resolve_item_id(source_lakehouse_name, "Lakehouse")
             result = create_shortcut(
                 target_workspace_id=workspace_id,
-                target_item_name=KQL_DB_NAME,
+                target_item_name=kql_db_name,
                 target_item_type="KQLDatabase",
                 target_path="Shortcut",
-                target_shortcut_name="MeterData",
+                target_shortcut_name="SourceData",
                 source_workspace_id=workspace_id,
-                source_item_id=SOURCE_LAKEHOUSE_ID,
-                source_path="Tables/meters",
+                source_item_id=source_lakehouse_id,
+                source_path="Tables/substations",
                 client=client,
                 notebookutils=notebookutils,
             )
@@ -267,20 +267,18 @@ def eventhouse_sql_examples():
         print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
     else:
         try:
-            SOURCE_LAKEHOUSE_ID = fabric.resolve_item_id(SOURCE_LAKEHOUSE_NAME, "Lakehouse")
             tables = ["substations", "feeders"]
 
             for table in tables:
                 print(f"\nProcessing table: {table}")
                 success = create_accelerated_shortcut_in_kql_db(
                     target_workspace_id=workspace_id,
-                    target_kql_db_name=KQL_DB_NAME,
+                    target_kql_db_name=kql_db_name,
                     target_shortcut_name=table.capitalize(),
                     source_workspace_id=workspace_id,
-                    source_item_id=SOURCE_LAKEHOUSE_ID,
                     source_path=f"Tables/{table}",
-                    target_eventhouse_name=EVENTHOUSE_NAME,
-                    source_lakehouse_name=SOURCE_LAKEHOUSE_NAME,
+                    target_eventhouse_name=eventhouse_name,
+                    source_lakehouse_name=source_lakehouse_name,
                     client=client,
                     notebookutils=notebookutils,
                 )
@@ -291,7 +289,7 @@ def eventhouse_sql_examples():
     # Example 5: Get SQL Endpoint
     print("\n--- Example 5: Get SQL Endpoint ---")
     try:
-        sql_endpoint = get_sql_endpoint(workspace_id, SOURCE_LAKEHOUSE_NAME, "Lakehouse", client)
+        sql_endpoint = get_sql_endpoint(workspace_id, source_lakehouse_name, "Lakehouse", client)
         if sql_endpoint:
             print(f"✅ SQL Endpoint: {sql_endpoint}")
         else:
@@ -308,7 +306,7 @@ def eventhouse_sql_examples():
         try:
             sql_query = "SELECT COUNT(*) as total_meters FROM meters"
             print(f"Executing: {sql_query}")
-            results = exec_sql_query(sql_endpoint, SOURCE_LAKEHOUSE_NAME, sql_query, notebookutils)
+            results = exec_sql_query(sql_endpoint, source_lakehouse_name, sql_query, notebookutils)
             if results:
                 print(f"✅ Results: {results}")
         except Exception as e:
