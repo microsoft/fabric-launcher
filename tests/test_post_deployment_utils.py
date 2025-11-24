@@ -110,17 +110,15 @@ class TestGetFolderIdByName:
         mock_response.json.return_value = {"value": [{"displayName": "Folder1", "id": "folder-id-1"}]}
         mock_client.get.return_value = mock_response
 
-        result = get_folder_id_by_name("NonExistent", workspace_id, mock_client)
-
-        assert result is None
+        with pytest.raises(ValueError, match="Folder 'NonExistent' not found"):
+            get_folder_id_by_name("NonExistent", workspace_id, mock_client)
 
     def test_get_folder_id_api_error(self, mock_client, workspace_id):
         """Test handling of API errors."""
         mock_client.get.side_effect = Exception("API Error")
 
-        result = get_folder_id_by_name("Test", workspace_id, mock_client)
-
-        assert result is None
+        with pytest.raises(RuntimeError, match="Error retrieving folder"):
+            get_folder_id_by_name("Test", workspace_id, mock_client)
 
 
 class TestGetItemDefinitionFromRepo:
@@ -462,9 +460,8 @@ class TestExecKqlCommand:
         mock_response.text = "Bad request"
 
         with patch("requests.post", return_value=mock_response):
-            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
-
-            assert result is None
+            with pytest.raises(RuntimeError, match="KQL command failed: HTTP 400"):
+                exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
     def test_exec_kql_command_network_error(self, mock_notebookutils):
         """Test handling of network errors."""
@@ -477,9 +474,8 @@ class TestExecKqlCommand:
         kql_command = ".show tables"
 
         with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            result = exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
-
-            assert result is None
+            with pytest.raises(requests.RequestException):
+                exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
 
 class TestCreateShortcut:
@@ -538,20 +534,19 @@ class TestCreateShortcut:
 
         mock_client.get.return_value = list_response
 
-        result = create_shortcut(
-            target_workspace_id=workspace_id,
-            target_item_name="NonExistent",
-            target_item_type="Lakehouse",
-            target_path="Tables",
-            target_shortcut_name="TestShortcut",
-            source_workspace_id=workspace_id,
-            source_item_id="source-id-456",
-            source_path="Tables/SourceTable",
-            client=mock_client,
-            notebookutils=mock_notebookutils,
-        )
-
-        assert result is None
+        with pytest.raises(ValueError, match="Lakehouse 'NonExistent' not found"):
+            create_shortcut(
+                target_workspace_id=workspace_id,
+                target_item_name="NonExistent",
+                target_item_type="Lakehouse",
+                target_path="Tables",
+                target_shortcut_name="TestShortcut",
+                source_workspace_id=workspace_id,
+                source_item_id="source-id-456",
+                source_path="Tables/SourceTable",
+                client=mock_client,
+                notebookutils=mock_notebookutils,
+            )
 
     def test_create_shortcut_api_error(self, mock_client, workspace_id, mock_notebookutils):
         """Test handling of API errors."""
@@ -569,20 +564,19 @@ class TestCreateShortcut:
         mock_client.default_base_url = "https://api.fabric.microsoft.com"
 
         with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            result = create_shortcut(
-                target_workspace_id=workspace_id,
-                target_item_name="TargetLakehouse",
-                target_item_type="Lakehouse",
-                target_path="Tables",
-                target_shortcut_name="TestShortcut",
-                source_workspace_id=workspace_id,
-                source_item_id="source-id-456",
-                source_path="Tables/SourceTable",
-                client=mock_client,
-                notebookutils=mock_notebookutils,
-            )
-
-            assert result is None
+            with pytest.raises(requests.RequestException):
+                create_shortcut(
+                    target_workspace_id=workspace_id,
+                    target_item_name="TargetLakehouse",
+                    target_item_type="Lakehouse",
+                    target_path="Tables",
+                    target_shortcut_name="TestShortcut",
+                    source_workspace_id=workspace_id,
+                    source_item_id="source-id-456",
+                    source_path="Tables/SourceTable",
+                    client=mock_client,
+                    notebookutils=mock_notebookutils,
+                )
 
 
 class TestCreateAcceleratedShortcutInKqlDb:
@@ -743,9 +737,8 @@ class TestGetSqlEndpoint:
 
         mock_client.get.return_value = list_response
 
-        result = get_sql_endpoint(workspace_id, "NonExistent", "Lakehouse", mock_client)
-
-        assert result is None
+        with pytest.raises(ValueError, match="Lakehouse 'NonExistent' not found"):
+            get_sql_endpoint(workspace_id, "NonExistent", "Lakehouse", mock_client)
 
     def test_get_sql_endpoint_unsupported_type(self, mock_client, workspace_id):
         """Test with unsupported item type."""
@@ -757,9 +750,8 @@ class TestGetSqlEndpoint:
 
         mock_client.get.return_value = list_response
 
-        result = get_sql_endpoint(workspace_id, "TestNotebook", "Notebook", mock_client)
-
-        assert result is None
+        with pytest.raises(ValueError, match="Unsupported item type for SQL endpoint: Notebook"):
+            get_sql_endpoint(workspace_id, "TestNotebook", "Notebook", mock_client)
 
     def test_get_sql_endpoint_missing_connection_string(self, mock_client, workspace_id):
         """Test when connectionString is missing from properties."""
@@ -775,9 +767,8 @@ class TestGetSqlEndpoint:
 
         mock_client.get.side_effect = [list_response, lakehouse_response]
 
-        result = get_sql_endpoint(workspace_id, "TestLakehouse", "Lakehouse", mock_client)
-
-        assert result is None
+        with pytest.raises(RuntimeError, match="SQL endpoint connection string not found"):
+            get_sql_endpoint(workspace_id, "TestLakehouse", "Lakehouse", mock_client)
 
 
 class TestExecSqlQuery:
@@ -848,9 +839,8 @@ class TestExecSqlQuery:
         mock_response.text = "Invalid object name 'invalid_table'"
 
         with patch("requests.post", return_value=mock_response):
-            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
-
-            assert result is None
+            with pytest.raises(RuntimeError, match="SQL query failed: HTTP 400"):
+                exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 
     def test_exec_sql_query_network_error(self, mock_notebookutils):
         """Test handling of network errors."""
@@ -863,9 +853,8 @@ class TestExecSqlQuery:
         sql_query = "SELECT * FROM meters"
 
         with patch("requests.post", side_effect=requests.RequestException("Network error")):
-            result = exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
-
-            assert result is None
+            with pytest.raises(requests.RequestException):
+                exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 
     def test_exec_sql_query_custom_timeout(self, mock_notebookutils):
         """Test executing query with custom timeout."""

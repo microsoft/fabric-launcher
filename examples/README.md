@@ -47,25 +47,18 @@ Demonstrates multi-stage deployments (dev → test → prod) with environment-sp
 **Prerequisites**: GitHub repository URL, access to multiple workspaces
 
 ### `post_deployment_utils_examples.py`
-Shows how to use utility functions for custom post-deployment tasks like logical ID replacement and item organization.
-
-**Prerequisites**: 
-- Repository already downloaded to `/lakehouse/default/Files/src/workspace`
-- Fabric workspace with appropriate items and folders
-- `sempy.fabric` for authentication
-
-### `eventhouse_and_sql_examples.py`
-Demonstrates advanced post-deployment operations including:
+Comprehensive examples of post-deployment utility functions including:
+- Custom item deployments with logical ID replacement
+- Item organization and folder management
 - Eventhouse and KQL Database operations
 - Creating shortcuts and accelerated external tables
-- SQL endpoint queries
-- KQL management command execution
+- SQL endpoint queries and KQL command execution
 
-**Prerequisites**:
-- Eventhouse with KQL Database
-- Lakehouse with tables to create shortcuts from
-- Fabric notebook environment with `notebookutils`
-- `sempy.fabric` for authentication
+**Prerequisites**: 
+- Repository already downloaded to `/lakehouse/default/Files/src/workspace` (for basic examples)
+- Fabric workspace with appropriate items and folders
+- For Eventhouse/SQL examples: Eventhouse with KQL Database and Lakehouse
+- `sempy.fabric` for authentication (available in Fabric notebooks)
 
 ### `deployment_config_example.yaml`
 Sample YAML configuration file for deployment settings.

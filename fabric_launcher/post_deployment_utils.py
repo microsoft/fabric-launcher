@@ -24,7 +24,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> Optional[str]:
+def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> str:
     """
     Get folder ID by display name.
 
@@ -34,7 +34,11 @@ def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> Option
         client: Fabric REST client instance (e.g., fabric.FabricRestClient())
 
     Returns:
-        Folder ID if found, None otherwise
+        Folder ID
+
+    Raises:
+        ValueError: If folder is not found
+        RuntimeError: If API call fails
 
     Example:
         >>> from sempy import fabric
@@ -46,17 +50,21 @@ def get_folder_id_by_name(folder_name: str, workspace_id: str, client) -> Option
         url = f"v1/workspaces/{workspace_id}/folders"
         response = client.get(url)
 
-        if response.status_code == 200:
-            folders = response.json().get("value", [])
-            for folder in folders:
-                if folder["displayName"] == folder_name:
-                    return folder["id"]
+        if response.status_code != 200:
+            raise RuntimeError(f"Failed to list folders: HTTP {response.status_code}")
 
-        return None
+        folders = response.json().get("value", [])
+        for folder in folders:
+            if folder["displayName"] == folder_name:
+                return folder["id"]
 
+        raise ValueError(f"Folder '{folder_name}' not found in workspace")
+
+    except (ValueError, RuntimeError):
+        raise
     except Exception as e:
         logger.error(f"Error retrieving folder: {e}")
-        return None
+        raise RuntimeError(f"Error retrieving folder: {e}") from e
 
 
 def get_item_definition_from_repo(item_relative_path: str, repository_directory: str) -> tuple[dict[str, Any], str]:
@@ -524,7 +532,7 @@ def get_kusto_query_uri(workspace_id: str, eventhouse_name: str, client) -> str:
         raise
 
 
-def exec_kql_command(kusto_query_uri: str, kql_db_name: str, kql_command: str, notebookutils) -> Optional[dict]:
+def exec_kql_command(kusto_query_uri: str, kql_db_name: str, kql_command: str, notebookutils) -> dict:
     """
     Execute a KQL management command against a Kusto database.
 
@@ -535,7 +543,11 @@ def exec_kql_command(kusto_query_uri: str, kql_db_name: str, kql_command: str, n
         notebookutils: Notebook utilities for authentication (notebookutils.credentials.getToken)
 
     Returns:
-        Response JSON as dictionary if successful, None otherwise
+        Response JSON as dictionary
+
+    Raises:
+        RuntimeError: If KQL command execution fails
+        requests.RequestException: If network error occurs
 
     Example:
         >>> # Create an external table
@@ -563,19 +575,21 @@ def exec_kql_command(kusto_query_uri: str, kql_db_name: str, kql_command: str, n
         logger.debug(f"Response status: {response.status_code}")
 
         if not response.ok:
-            logger.warning(f"KQL command returned status {response.status_code}")
-            logger.debug(f"Response: {response.text[:500]}")
-            return None
+            error_msg = f"KQL command failed: HTTP {response.status_code}"
+            logger.error(f"{error_msg}: {response.text[:500]}")
+            raise RuntimeError(f"{error_msg}: {response.text[:200]}")
 
         logger.info("KQL command executed successfully")
         return response.json()
 
+    except RuntimeError:
+        raise
     except requests.RequestException as e:
-        logger.error(f"Error executing KQL command: {e}")
-        return None
+        logger.error(f"Network error executing KQL command: {e}")
+        raise
     except Exception as e:
         logger.error(f"Unexpected error executing KQL command: {e}")
-        return None
+        raise RuntimeError(f"Unexpected error executing KQL command: {e}") from e
 
 
 def create_shortcut(
@@ -589,7 +603,7 @@ def create_shortcut(
     source_path: str,
     client,
     notebookutils,
-) -> Optional[dict]:
+) -> dict:
     """
     Create an internal OneLake shortcut in a Fabric item.
 
@@ -606,7 +620,12 @@ def create_shortcut(
         notebookutils: Notebook utilities for authentication
 
     Returns:
-        Response JSON if successful, None otherwise
+        Response JSON dictionary
+
+    Raises:
+        ValueError: If target item is not found
+        RuntimeError: If shortcut creation fails
+        requests.RequestException: If network error occurs
 
     Example:
         >>> # Create shortcut in a Lakehouse
@@ -632,8 +651,7 @@ def create_shortcut(
         list_response = client.get(list_url)
 
         if list_response.status_code != 200:
-            logger.error(f"Failed to list items: {list_response.status_code}")
-            return None
+            raise RuntimeError(f"Failed to list items: HTTP {list_response.status_code}")
 
         items = list_response.json().get("value", [])
         target_item_id = None
@@ -644,8 +662,7 @@ def create_shortcut(
                 break
 
         if not target_item_id:
-            logger.error(f"{target_item_type} '{target_item_name}' not found in workspace")
-            return None
+            raise ValueError(f"{target_item_type} '{target_item_name}' not found in workspace")
 
         logger.debug(f"Found target item (ID: {target_item_id})")
 
@@ -679,16 +696,19 @@ def create_shortcut(
                 return response.json()
             except ValueError:
                 return {"status": "success"}
-        logger.warning(f"Shortcut creation returned status {response.status_code}")
-        logger.debug(f"Response: {response.text[:500]}")
-        return None
 
+        error_msg = f"Shortcut creation failed: HTTP {response.status_code}"
+        logger.error(f"{error_msg}: {response.text[:500]}")
+        raise RuntimeError(f"{error_msg}: {response.text[:200]}")
+
+    except (ValueError, RuntimeError):
+        raise
     except requests.RequestException as e:
-        logger.error(f"Error creating shortcut: {e}")
-        return None
+        logger.error(f"Network error creating shortcut: {e}")
+        raise
     except Exception as e:
         logger.error(f"Unexpected error creating shortcut: {e}")
-        return None
+        raise RuntimeError(f"Unexpected error creating shortcut: {e}") from e
 
 
 def create_accelerated_shortcut_in_kql_db(
@@ -834,7 +854,7 @@ def create_accelerated_shortcut_in_kql_db(
         return False
 
 
-def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) -> Optional[str]:
+def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) -> str:
     """
     Get the SQL endpoint connection string for a Fabric item.
 
@@ -845,7 +865,11 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
         client: Fabric REST client instance
 
     Returns:
-        SQL endpoint connection string if found, None otherwise
+        SQL endpoint connection string
+
+    Raises:
+        ValueError: If item is not found or item type is unsupported
+        RuntimeError: If API call fails or connection string is not available
 
     Example:
         >>> from sempy import fabric
@@ -863,8 +887,7 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
         list_response = client.get(list_url)
 
         if list_response.status_code != 200:
-            logger.error(f"Failed to list items: {list_response.status_code}")
-            return None
+            raise RuntimeError(f"Failed to list items: HTTP {list_response.status_code}")
 
         items = list_response.json().get("value", [])
         item_id = None
@@ -875,8 +898,7 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
                 break
 
         if not item_id:
-            logger.error(f"{item_type} '{item_name}' not found in workspace")
-            return None
+            raise ValueError(f"{item_type} '{item_name}' not found in workspace")
 
         logger.debug(f"Found {item_type} (ID: {item_id})")
 
@@ -888,14 +910,12 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
         elif item_type == "SQLEndpoint":
             url = f"v1/workspaces/{workspace_id}/sqlEndpoints/{item_id}"
         else:
-            logger.error(f"Unsupported item type for SQL endpoint: {item_type}")
-            return None
+            raise ValueError(f"Unsupported item type for SQL endpoint: {item_type}")
 
         response = client.get(url)
 
         if response.status_code != 200:
-            logger.error(f"Failed to get {item_type} properties: {response.status_code}")
-            return None
+            raise RuntimeError(f"Failed to get {item_type} properties: HTTP {response.status_code}")
 
         item_data = response.json()
 
@@ -906,20 +926,21 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
             sql_endpoint = item_data.get("properties", {}).get("sqlEndpointProperties", {}).get("connectionString")
 
         if not sql_endpoint:
-            logger.error("SQL endpoint connection string not found in properties")
-            return None
+            raise RuntimeError(f"SQL endpoint connection string not found in {item_type} properties")
 
         logger.info(f"Retrieved SQL endpoint: {sql_endpoint}")
         return sql_endpoint
 
+    except (ValueError, RuntimeError):
+        raise
     except Exception as e:
         logger.error(f"Error retrieving SQL endpoint: {e}")
-        return None
+        raise RuntimeError(f"Error retrieving SQL endpoint: {e}") from e
 
 
 def exec_sql_query(
     sql_endpoint: str, database_name: str, sql_query: str, notebookutils, timeout: int = 60
-) -> Optional[list]:
+) -> list:
     """
     Execute a SQL query against a Fabric SQL endpoint.
 
@@ -931,7 +952,17 @@ def exec_sql_query(
         timeout: Request timeout in seconds (default: 60)
 
     Returns:
-        List of result rows as dictionaries if successful, None otherwise
+        List of result rows as dictionaries
+
+    Raises:
+        RuntimeError: If SQL query execution fails
+        requests.RequestException: If network error occurs
+
+    Warning:
+        This function executes raw SQL queries without parameterization. Ensure queries
+        are properly validated and sanitized before execution, especially if they contain
+        user input. Never pass unsanitized user input directly into SQL queries to prevent
+        SQL injection attacks.
 
     Example:
         >>> # Get SQL endpoint
@@ -967,9 +998,9 @@ def exec_sql_query(
         logger.debug(f"Response status: {response.status_code}")
 
         if not response.ok:
-            logger.warning(f"SQL query returned status {response.status_code}")
-            logger.debug(f"Response: {response.text[:500]}")
-            return None
+            error_msg = f"SQL query failed: HTTP {response.status_code}"
+            logger.error(f"{error_msg}: {response.text[:500]}")
+            raise RuntimeError(f"{error_msg}: {response.text[:200]}")
 
         result_data = response.json()
 
@@ -993,9 +1024,11 @@ def exec_sql_query(
         logger.info("SQL query executed successfully")
         return rows
 
+    except RuntimeError:
+        raise
     except requests.RequestException as e:
-        logger.error(f"Error executing SQL query: {e}")
-        return None
+        logger.error(f"Network error executing SQL query: {e}")
+        raise
     except Exception as e:
         logger.error(f"Unexpected error executing SQL query: {e}")
-        return None
+        raise RuntimeError(f"Unexpected error executing SQL query: {e}") from e

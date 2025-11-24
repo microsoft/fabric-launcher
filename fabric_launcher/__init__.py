@@ -22,9 +22,15 @@ from .github_downloader import GitHubDownloader
 from .launcher import FabricLauncher
 from .notebook_executor import NotebookExecutor
 from .post_deployment_utils import (
+    create_accelerated_shortcut_in_kql_db,
     create_or_update_fabric_item,
+    create_shortcut,
+    exec_kql_command,
+    exec_sql_query,
     get_folder_id_by_name,
     get_item_definition_from_repo,
+    get_kusto_query_uri,
+    get_sql_endpoint,
     move_item_to_folder,
     replace_logical_ids,
     scan_logical_ids,
@@ -47,4 +53,10 @@ __all__ = [
     "replace_logical_ids",
     "create_or_update_fabric_item",
     "move_item_to_folder",
+    "get_kusto_query_uri",
+    "exec_kql_command",
+    "create_shortcut",
+    "create_accelerated_shortcut_in_kql_db",
+    "get_sql_endpoint",
+    "exec_sql_query",
 ]

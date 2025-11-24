@@ -1,13 +1,40 @@
 """
 Example: Using Post-Deployment Utility Functions
 
-This example demonstrates how to use the post-deployment utility functions
-to handle custom item deployments with logical ID replacement.
+This example demonstrates how to use the post-deployment utility functions for:
+- Custom item deployments with logical ID replacement
+- Item organization and folder management
+- Eventhouse and KQL Database operations
+- Creating shortcuts and accelerated external tables
+- SQL endpoint queries and KQL command execution
+
+Prerequisites:
+- Microsoft Fabric workspace with appropriate permissions
+- For Eventhouse/SQL examples: Eventhouse with KQL Database and Lakehouse with tables
+- sempy.fabric package installed (available in Fabric notebooks)
 """
 
 import sempy.fabric as fabric
 
-from fabric_launcher import create_or_update_fabric_item, get_folder_id_by_name, move_item_to_folder, scan_logical_ids
+from fabric_launcher import (
+    create_accelerated_shortcut_in_kql_db,
+    create_or_update_fabric_item,
+    create_shortcut,
+    exec_kql_command,
+    exec_sql_query,
+    get_folder_id_by_name,
+    get_kusto_query_uri,
+    get_sql_endpoint,
+    move_item_to_folder,
+    scan_logical_ids,
+)
+
+# Note: notebookutils is only available in Fabric notebooks
+try:
+    import notebookutils
+except ImportError:
+    print("⚠️ notebookutils not available - some functions require Fabric notebook environment")
+    notebookutils = None
 
 
 def main():
@@ -170,6 +197,128 @@ def folder_organization_example():
     print("\nOrganization completed!")
 
 
+def eventhouse_sql_examples():
+    """Examples: Eventhouse, KQL Database, and SQL Operations."""
+
+    # Initialize Fabric client
+    client = fabric.FabricRestClient()
+    workspace_id = fabric.resolve_workspace_id()
+
+    # Define your resources (adjust these to match your environment)
+    EVENTHOUSE_NAME = "PowerUtilitiesEH"
+    KQL_DB_NAME = "PowerUtilitiesEH"
+    SOURCE_LAKEHOUSE_NAME = "ReferenceDataLH"
+
+    print("\n" + "=" * 60)
+    print("Eventhouse and SQL Operations Examples")
+    print("=" * 60)
+
+    # Example 1: Get Kusto Query URI
+    print("\n--- Example 1: Get Kusto Query URI ---")
+    try:
+        kusto_uri = get_kusto_query_uri(workspace_id, EVENTHOUSE_NAME, client)
+        print(f"✅ Kusto Query URI: {kusto_uri}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        kusto_uri = None
+
+    # Example 2: Execute KQL Management Commands
+    print("\n--- Example 2: Execute KQL Management Commands ---")
+    if not notebookutils:
+        print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
+    elif kusto_uri:
+        try:
+            # Show tables
+            kql_command = ".show tables"
+            print(f"Executing: {kql_command}")
+            result = exec_kql_command(kusto_uri, KQL_DB_NAME, kql_command, notebookutils)
+            if result:
+                print("✅ Command executed successfully")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    # Example 3: Create Shortcut
+    print("\n--- Example 3: Create OneLake Shortcut ---")
+    if not notebookutils:
+        print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
+    else:
+        try:
+            SOURCE_LAKEHOUSE_ID = fabric.resolve_item_id(SOURCE_LAKEHOUSE_NAME, "Lakehouse")
+            result = create_shortcut(
+                target_workspace_id=workspace_id,
+                target_item_name=KQL_DB_NAME,
+                target_item_type="KQLDatabase",
+                target_path="Shortcut",
+                target_shortcut_name="MeterData",
+                source_workspace_id=workspace_id,
+                source_item_id=SOURCE_LAKEHOUSE_ID,
+                source_path="Tables/meters",
+                client=client,
+                notebookutils=notebookutils,
+            )
+            if result:
+                print("✅ Shortcut created successfully")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    # Example 4: Create Accelerated Shortcuts
+    print("\n--- Example 4: Create Accelerated Shortcuts in KQL Database ---")
+    if not notebookutils:
+        print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
+    else:
+        try:
+            SOURCE_LAKEHOUSE_ID = fabric.resolve_item_id(SOURCE_LAKEHOUSE_NAME, "Lakehouse")
+            tables = ["substations", "feeders"]
+
+            for table in tables:
+                print(f"\nProcessing table: {table}")
+                success = create_accelerated_shortcut_in_kql_db(
+                    target_workspace_id=workspace_id,
+                    target_kql_db_name=KQL_DB_NAME,
+                    target_shortcut_name=table.capitalize(),
+                    source_workspace_id=workspace_id,
+                    source_item_id=SOURCE_LAKEHOUSE_ID,
+                    source_path=f"Tables/{table}",
+                    target_eventhouse_name=EVENTHOUSE_NAME,
+                    source_lakehouse_name=SOURCE_LAKEHOUSE_NAME,
+                    client=client,
+                    notebookutils=notebookutils,
+                )
+                print(f"{'✅' if success else '⚠️'} Table '{table}'")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    # Example 5: Get SQL Endpoint
+    print("\n--- Example 5: Get SQL Endpoint ---")
+    try:
+        sql_endpoint = get_sql_endpoint(workspace_id, SOURCE_LAKEHOUSE_NAME, "Lakehouse", client)
+        if sql_endpoint:
+            print(f"✅ SQL Endpoint: {sql_endpoint}")
+        else:
+            print("⚠️ SQL endpoint not found")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sql_endpoint = None
+
+    # Example 6: Execute SQL Queries
+    print("\n--- Example 6: Execute SQL Queries ---")
+    if not notebookutils:
+        print("⚠️ Skipping - requires notebookutils (Fabric notebook environment)")
+    elif sql_endpoint:
+        try:
+            sql_query = "SELECT COUNT(*) as total_meters FROM meters"
+            print(f"Executing: {sql_query}")
+            results = exec_sql_query(sql_endpoint, SOURCE_LAKEHOUSE_NAME, sql_query, notebookutils)
+            if results:
+                print(f"✅ Results: {results}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    print("\n" + "=" * 60)
+    print("Eventhouse/SQL Examples Completed")
+    print("=" * 60)
+
+
 if __name__ == "__main__":
     # Run the main example
     main()
@@ -177,3 +326,4 @@ if __name__ == "__main__":
     # Uncomment to run other examples:
     # batch_deployment_example()
     # folder_organization_example()
+    # eventhouse_sql_examples()

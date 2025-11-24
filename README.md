@@ -134,6 +134,7 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed syntax and parameters.
 
 The `fabric_launcher.post_deployment_utils` module provides utility functions for common post-deployment tasks:
 
+**Item Management:**
 - **`get_folder_id_by_name()`** - Find folders by display name
 - **`get_item_definition_from_repo()`** - Load item definitions from repository
 - **`scan_logical_ids()`** - Map logical IDs to actual workspace IDs
@@ -141,12 +142,24 @@ The `fabric_launcher.post_deployment_utils` module provides utility functions fo
 - **`create_or_update_fabric_item()`** - Generic item creation with logical ID replacement
 - **`move_item_to_folder()`** - Organize items into folders
 
+**Eventhouse & KQL Database:**
+- **`get_kusto_query_uri()`** - Get Kusto query service URI for an Eventhouse
+- **`exec_kql_command()`** - Execute KQL management commands
+- **`create_shortcut()`** - Create OneLake shortcuts in Fabric items
+- **`create_accelerated_shortcut_in_kql_db()`** - Create shortcuts with accelerated external tables
+
+**SQL Endpoints:**
+- **`get_sql_endpoint()`** - Get SQL endpoint connection strings for Lakehouse/Warehouse
+- **`exec_sql_query()`** - Execute SQL queries against Fabric SQL endpoints
+
 These helpers are useful for:
 - Deploying custom item types not yet supported by fabric-cicd
 - Handling cross-item references and logical ID remapping
 - Post-deployment organization and configuration
+- Eventhouse and KQL Database setup with shortcuts
+- SQL-based data validation and queries
 
-See [examples/post_deployment_utils_examples.py](examples/post_deployment_utils_examples.py) for usage examples.
+See [examples/post_deployment_utils_examples.py](examples/post_deployment_utils_examples.py) for comprehensive usage examples including Eventhouse, KQL Database, and SQL operations.
 
 ## Development and Testing
 

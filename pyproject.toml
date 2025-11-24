@@ -25,8 +25,15 @@ dependencies = [
     "azure-identity>=1.12.0",
     "requests>=2.28.0",
     "pyyaml>=6.0",
+    "semantic-link-sempy>=0.7.0",
 ]
 license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/microsoft/fabric-launcher"
+Documentation = "https://github.com/microsoft/fabric-launcher/blob/main/README.md"
+"Bug Reports" = "https://github.com/microsoft/fabric-launcher/issues"
+"Source Code" = "https://github.com/microsoft/fabric-launcher"
 
 [project.optional-dependencies]
 dev = [
