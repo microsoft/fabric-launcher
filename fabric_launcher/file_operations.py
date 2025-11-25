@@ -3,12 +3,21 @@ File Operations Module
 
 This module provides functionality to upload files to Fabric Lakehouse Files area.
 Supports copying files from local repository folders to Lakehouse.
+
+Note on Resource Management:
+    The methods in this module mount Lakehouse storage using notebookutils.fs.mount().
+    Fabric automatically manages mount lifecycle within notebook sessions. Explicit
+    unmounting is not required as mounts are cleaned up when the notebook session ends.
+    For long-running operations or when processing many different Lakehouses,
+    consider using notebookutils.fs.unmount() explicitly if mount limits are reached.
 """
 
 import os
 import shutil
 from pathlib import Path
 from typing import Optional
+
+__all__ = ["LakehouseFileManager"]
 
 
 class LakehouseFileManager:

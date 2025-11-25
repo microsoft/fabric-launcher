@@ -184,7 +184,7 @@ get_folder_id_by_name(
     folder_name: str,
     workspace_id: str,
     client
-) -> Optional[str]
+) -> str
 ```
 
 **Parameters:**
@@ -192,7 +192,9 @@ get_folder_id_by_name(
 - `workspace_id`: Target workspace ID
 - `client`: Fabric REST client instance
 
-**Returns:** Folder ID if found, None otherwise
+**Returns:** Folder ID
+
+**Raises:** `ValueError` if folder not found, `requests.HTTPError` on API error
 
 ### scan_logical_ids()
 
@@ -317,7 +319,7 @@ exec_kql_command(
     kql_db_name: str,
     kql_command: str,
     notebookutils
-) -> Optional[dict]
+) -> dict
 ```
 
 **Parameters:**
@@ -326,7 +328,9 @@ exec_kql_command(
 - `kql_command`: KQL management command to execute
 - `notebookutils`: Notebook utilities for authentication
 
-**Returns:** Response JSON as dictionary if successful, None otherwise
+**Returns:** Response JSON as dictionary
+
+**Raises:** `requests.HTTPError` on API error, `requests.RequestException` on network error
 
 ---
 
@@ -346,7 +350,7 @@ create_shortcut(
     source_path: str,
     client,
     notebookutils
-) -> Optional[dict]
+) -> dict
 ```
 
 **Parameters:**
@@ -361,7 +365,9 @@ create_shortcut(
 - `client`: Fabric REST client instance
 - `notebookutils`: Notebook utilities for authentication
 
-**Returns:** Response JSON if successful, None otherwise
+**Returns:** Response JSON with shortcut details
+
+**Raises:** `ValueError` if target item not found, `requests.HTTPError` on API error
 
 ---
 
@@ -375,13 +381,12 @@ create_accelerated_shortcut_in_kql_db(
     target_kql_db_name: str,
     target_shortcut_name: str,
     source_workspace_id: str,
-    source_item_id: str,
     source_path: str,
     target_eventhouse_name: str,
     source_lakehouse_name: str,
     client,
     notebookutils
-) -> bool
+) -> dict
 ```
 
 **Parameters:**
@@ -389,14 +394,15 @@ create_accelerated_shortcut_in_kql_db(
 - `target_kql_db_name`: Name of KQL Database
 - `target_shortcut_name`: Name for shortcut and external table
 - `source_workspace_id`: Workspace ID containing source Lakehouse
-- `source_item_id`: ID of source Lakehouse
-- `source_path`: Path to table in Lakehouse
+- `source_path`: Path to table in Lakehouse (e.g., "Tables/my_table")
 - `target_eventhouse_name`: Name of Eventhouse
 - `source_lakehouse_name`: Name of source Lakehouse
 - `client`: Fabric REST client instance
 - `notebookutils`: Notebook utilities for authentication
 
-**Returns:** True if successful, False otherwise
+**Returns:** Dictionary with shortcut and external table creation results
+
+**Raises:** `ValueError` if source Lakehouse not found, other exceptions propagated from shortcut/KQL operations
 
 ---
 
@@ -410,7 +416,7 @@ get_sql_endpoint(
     item_name: str,
     item_type: str,
     client
-) -> Optional[str]
+) -> str
 ```
 
 **Parameters:**
@@ -419,13 +425,19 @@ get_sql_endpoint(
 - `item_type`: Type of item (Lakehouse, Warehouse, SQLEndpoint)
 - `client`: Fabric REST client instance
 
-**Returns:** SQL endpoint connection string if found, None otherwise
+**Returns:** SQL endpoint connection string
+
+**Raises:** `ValueError` if item not found, unsupported item type, or connection string missing; `requests.HTTPError` on API error
 
 ---
 
 ### exec_sql_query()
 
 Execute a SQL query against a Fabric SQL endpoint.
+
+⚠️ **Security Warning:** This function constructs SQL queries that are sent to the database.
+Always validate and sanitize user input before passing it to the `sql_query` parameter
+to prevent SQL injection vulnerabilities.
 
 ```python
 exec_sql_query(
@@ -434,7 +446,7 @@ exec_sql_query(
     sql_query: str,
     notebookutils,
     timeout: int = 60
-) -> Optional[list]
+) -> list
 ```
 
 **Parameters:**
@@ -444,7 +456,9 @@ exec_sql_query(
 - `notebookutils`: Notebook utilities for authentication
 - `timeout`: Request timeout in seconds
 
-**Returns:** List of result rows as dictionaries if successful, None otherwise
+**Returns:** List of result rows as dictionaries
+
+**Raises:** `requests.HTTPError` on API error, `requests.RequestException` on network error
 
 ---
 

@@ -9,6 +9,9 @@ import json
 import os
 import uuid
 from pathlib import Path
+from typing import Any
+
+__all__ = ["PlatformFileFixer"]
 
 
 class PlatformFileFixer:
@@ -117,7 +120,7 @@ class PlatformFileFixer:
             print(f"  ❌ Failed to fix {file_path}: {e}")
             return False
 
-    def scan_and_fix_all(self, dry_run: bool = False) -> dict[str, any]:
+    def scan_and_fix_all(self, dry_run: bool = False) -> dict[str, Any]:
         """
         Scan all .platform files and fix any with zero GUIDs.
 

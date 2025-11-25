@@ -1,8 +1,9 @@
-"""
-Deployment Report Module
+"""Deployment Report Module
 
 This module provides functionality to generate comprehensive deployment reports.
 """
+
+__all__ = ["DeploymentReport"]
 
 import json
 from datetime import datetime

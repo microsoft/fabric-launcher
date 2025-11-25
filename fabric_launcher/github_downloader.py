@@ -1,8 +1,9 @@
-"""
-GitHub Repository Downloader Module
+"""GitHub Repository Downloader Module
 
 This module provides functionality to download and extract folders from GitHub repositories.
 """
+
+__all__ = ["GitHubDownloader"]
 
 import re
 import shutil

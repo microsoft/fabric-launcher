@@ -12,6 +12,21 @@ This module provides utility functions for common post-deployment tasks includin
 - Shortcut management
 """
 
+__all__ = [
+    "get_folder_id_by_name",
+    "get_item_definition_from_repo",
+    "scan_logical_ids",
+    "replace_logical_ids",
+    "create_or_update_fabric_item",
+    "move_item_to_folder",
+    "get_kusto_query_uri",
+    "exec_kql_command",
+    "create_shortcut",
+    "create_accelerated_shortcut_in_kql_db",
+    "get_sql_endpoint",
+    "exec_sql_query",
+]
+
 import base64
 import json
 import logging

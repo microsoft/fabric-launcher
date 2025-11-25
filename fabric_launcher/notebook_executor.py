@@ -1,8 +1,9 @@
-"""
-Notebook Executor Module
+"""Notebook Executor Module
 
 This module provides functionality to trigger execution of Fabric notebooks.
 """
+
+__all__ = ["NotebookExecutor"]
 
 from typing import Any, Optional
 

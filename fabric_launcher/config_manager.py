@@ -1,9 +1,10 @@
-"""
-Configuration Management Module
+"""Configuration Management Module
 
 This module provides functionality to load and manage deployment configurations
 from YAML or JSON files. Supports downloading config files from GitHub repositories.
 """
+
+__all__ = ["DeploymentConfig"]
 
 import json
 import tempfile

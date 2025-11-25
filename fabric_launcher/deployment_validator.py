@@ -1,9 +1,10 @@
-"""
-Post-Deployment Validation Module
+"""Post-Deployment Validation Module
 
 This module provides functionality to validate that deployment was successful
 and all items are accessible.
 """
+
+__all__ = ["DeploymentValidator"]
 
 import time
 from datetime import datetime

@@ -1,9 +1,10 @@
-"""
-Fabric Deployment Module
+"""Fabric Deployment Module
 
 This module provides functionality to deploy Fabric workspace items using fabric-cicd library.
 Designed to work within Fabric notebooks with notebookutils available.
 """
+
+__all__ = ["FabricNotebookTokenCredential", "FabricDeployer"]
 
 import base64
 import json

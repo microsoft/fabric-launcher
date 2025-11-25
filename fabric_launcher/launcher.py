@@ -1,5 +1,4 @@
-"""
-Fabric Launcher - Main Orchestration Module
+"""Fabric Launcher - Main Orchestration Module
 
 This module provides the main FabricLauncher class that orchestrates all operations:
 - Downloading source code from GitHub
@@ -9,6 +8,8 @@ This module provides the main FabricLauncher class that orchestrates all operati
 
 This is a wrapper around the fabric-cicd library designed for use in Fabric notebooks.
 """
+
+__all__ = ["FabricLauncher"]
 
 from pathlib import Path
 from typing import Any, Optional
