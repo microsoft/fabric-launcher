@@ -836,8 +836,6 @@ class FabricLauncher:
         """
         return self.notebook_executor.get_job_status(notebook_id=notebook_id, job_id=job_id, workspace_id=workspace_id)
 
-
-
     def validate_deployment(
         self,
         test_notebooks: bool = True,

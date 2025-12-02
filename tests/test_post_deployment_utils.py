@@ -459,8 +459,9 @@ class TestExecKqlCommand:
         mock_response.status_code = 400
         mock_response.text = "Bad request"
 
-        with patch("requests.post", return_value=mock_response), pytest.raises(
-            RuntimeError, match="KQL command failed: HTTP 400"
+        with (
+            patch("requests.post", return_value=mock_response),
+            pytest.raises(RuntimeError, match="KQL command failed: HTTP 400"),
         ):
             exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
@@ -474,8 +475,9 @@ class TestExecKqlCommand:
         kql_db_name = "TestDatabase"
         kql_command = ".show tables"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
-            requests.RequestException
+        with (
+            patch("requests.post", side_effect=requests.RequestException("Network error")),
+            pytest.raises(requests.RequestException),
         ):
             exec_kql_command(kusto_uri, kql_db_name, kql_command, mock_notebookutils)
 
@@ -565,8 +567,9 @@ class TestCreateShortcut:
         mock_client.get.return_value = list_response
         mock_client.default_base_url = "https://api.fabric.microsoft.com"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
-            requests.RequestException
+        with (
+            patch("requests.post", side_effect=requests.RequestException("Network error")),
+            pytest.raises(requests.RequestException),
         ):
             create_shortcut(
                 target_workspace_id=workspace_id,
@@ -858,8 +861,9 @@ class TestExecSqlQuery:
         mock_response.status_code = 400
         mock_response.text = "Invalid object name 'invalid_table'"
 
-        with patch("requests.post", return_value=mock_response), pytest.raises(
-            RuntimeError, match="SQL query failed: HTTP 400"
+        with (
+            patch("requests.post", return_value=mock_response),
+            pytest.raises(RuntimeError, match="SQL query failed: HTTP 400"),
         ):
             exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 
@@ -873,8 +877,9 @@ class TestExecSqlQuery:
         database_name = "TestDatabase"
         sql_query = "SELECT * FROM meters"
 
-        with patch("requests.post", side_effect=requests.RequestException("Network error")), pytest.raises(
-            requests.RequestException
+        with (
+            patch("requests.post", side_effect=requests.RequestException("Network error")),
+            pytest.raises(requests.RequestException),
         ):
             exec_sql_query(sql_endpoint, database_name, sql_query, mock_notebookutils)
 

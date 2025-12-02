@@ -141,9 +141,7 @@ class NotebookExecutor:
 
             # Trigger notebook execution
             result = self.run_notebook(
-                notebook_name=notebook_name,
-                parameters=parameters,
-                timeout_seconds=timeout_seconds
+                notebook_name=notebook_name, parameters=parameters, timeout_seconds=timeout_seconds
             )
 
             job_id = result.get("job_id")
@@ -165,10 +163,7 @@ class NotebookExecutor:
                 elapsed_time += poll_interval
 
                 try:
-                    status_data = self.get_job_status(
-                        notebook_id=notebook_id,
-                        job_id=job_id
-                    )
+                    status_data = self.get_job_status(notebook_id=notebook_id, job_id=job_id)
 
                     current_status = status_data.get("status", "Unknown")
                     print(f"📊 Status: {current_status} (elapsed: {elapsed_time}s)")
@@ -187,6 +182,7 @@ class NotebookExecutor:
                             print(f"🕒 End Time: {end_time}")
                         else:
                             from datetime import datetime
+
                             current_time = datetime.utcnow().isoformat() + "Z"
                             print(f"🕒 End Time: {current_time} (estimated)")
 
@@ -197,7 +193,7 @@ class NotebookExecutor:
                                 "status": current_status,
                                 "notebook_name": notebook_name,
                                 "job_id": job_id,
-                                "status_data": status_data
+                                "status_data": status_data,
                             }
                         # Failed, Cancelled, or Canceled
                         failure_reason = status_data.get("failureReason", "No reason provided")
@@ -248,5 +244,3 @@ class NotebookExecutor:
         except Exception as e:
             print(f"❌ Error getting job status: {e}")
             raise
-
-

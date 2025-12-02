@@ -80,9 +80,7 @@ class TestFabricDeployerInit:
 
         with patch("fabric_launcher.fabric_deployer.FabricWorkspace"):
             deployer = FabricDeployer(
-                workspace_id="test-workspace-id",
-                repository_directory="/repo/path",
-                notebookutils=mock_notebookutils
+                workspace_id="test-workspace-id", repository_directory="/repo/path", notebookutils=mock_notebookutils
             )
 
             assert deployer.workspace_id == "test-workspace-id"
@@ -103,7 +101,7 @@ class TestFabricDeployerInit:
                 notebookutils=mock_notebookutils,
                 environment="PROD",
                 allow_non_empty_workspace=True,
-                fix_zero_logical_ids=False
+                fix_zero_logical_ids=False,
             )
 
             assert deployer.environment == "PROD"
@@ -168,10 +166,11 @@ class TestDeployItems:
         """Test deployment skips workspace validation when allowed."""
         mock_notebookutils = MagicMock()
 
-        with patch("fabric_launcher.fabric_deployer.FabricWorkspace"), \
-             patch("fabric_launcher.fabric_deployer.publish_all_items"), \
-             patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer:
-
+        with (
+            patch("fabric_launcher.fabric_deployer.FabricWorkspace"),
+            patch("fabric_launcher.fabric_deployer.publish_all_items"),
+            patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer,
+        ):
             mock_fixer_instance = MagicMock()
             mock_fixer_instance.scan_and_fix_all.return_value = {"files_fixed": 0, "files_with_zero_guid": 0}
             mock_fixer.return_value = mock_fixer_instance
@@ -180,7 +179,7 @@ class TestDeployItems:
                 workspace_id="test-workspace-id",
                 repository_directory="/repo/path",
                 notebookutils=mock_notebookutils,
-                allow_non_empty_workspace=True
+                allow_non_empty_workspace=True,
             )
 
             deployer.deploy_items()
@@ -193,16 +192,17 @@ class TestDeployItems:
         """Test deployment skips fixer when disabled."""
         mock_notebookutils = MagicMock()
 
-        with patch("fabric_launcher.fabric_deployer.FabricWorkspace"), \
-             patch("fabric_launcher.fabric_deployer.publish_all_items"), \
-             patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer:
-
+        with (
+            patch("fabric_launcher.fabric_deployer.FabricWorkspace"),
+            patch("fabric_launcher.fabric_deployer.publish_all_items"),
+            patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer,
+        ):
             deployer = FabricDeployer(
                 workspace_id="test-workspace-id",
                 repository_directory="/repo/path",
                 notebookutils=mock_notebookutils,
                 fix_zero_logical_ids=False,
-                allow_non_empty_workspace=True  # Skip workspace validation too
+                allow_non_empty_workspace=True,  # Skip workspace validation too
             )
 
             deployer.deploy_items()
@@ -214,10 +214,11 @@ class TestDeployItems:
         """Test deploying specific item types."""
         mock_notebookutils = MagicMock()
 
-        with patch("fabric_launcher.fabric_deployer.FabricWorkspace"), \
-             patch("fabric_launcher.fabric_deployer.publish_all_items"), \
-             patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer:
-
+        with (
+            patch("fabric_launcher.fabric_deployer.FabricWorkspace"),
+            patch("fabric_launcher.fabric_deployer.publish_all_items"),
+            patch("fabric_launcher.fabric_deployer.PlatformFileFixer") as mock_fixer,
+        ):
             mock_fixer_instance = MagicMock()
             mock_fixer_instance.scan_and_fix_all.return_value = {"files_fixed": 0, "files_with_zero_guid": 0}
             mock_fixer.return_value = mock_fixer_instance
@@ -226,10 +227,9 @@ class TestDeployItems:
                 workspace_id="test-workspace-id",
                 repository_directory="/repo/path",
                 notebookutils=mock_notebookutils,
-                allow_non_empty_workspace=True
+                allow_non_empty_workspace=True,
             )
 
             deployer.deploy_items(item_types=["Lakehouse", "Notebook"])
 
             assert deployer.workspace.item_type_in_scope == ["Lakehouse", "Notebook"]
-

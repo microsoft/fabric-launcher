@@ -855,8 +855,7 @@ def create_accelerated_shortcut_in_kql_db(
         # Step 4: Create external table
         logger.info(f"Creating external table '{target_shortcut_name}'...")
         kql_command = (
-            f".create-or-alter external table {target_shortcut_name} "
-            f"kind=delta (h@'{kql_db_source_path};impersonate')"
+            f".create-or-alter external table {target_shortcut_name} kind=delta (h@'{kql_db_source_path};impersonate')"
         )
 
         result = exec_kql_command(kusto_query_uri, target_kql_db_name, kql_command, notebookutils)
@@ -870,7 +869,7 @@ def create_accelerated_shortcut_in_kql_db(
         # Step 5: Enable query acceleration
         logger.info(f"Enabling query acceleration on '{target_shortcut_name}'...")
         kql_command = (
-            f'.alter external table {target_shortcut_name} policy query_acceleration '
+            f".alter external table {target_shortcut_name} policy query_acceleration "
             f"""'{{"IsEnabled": true, "Hot": "365.00:00:00", "MaxAge": "01:00:00"}}'"""
         )
 
@@ -973,9 +972,7 @@ def get_sql_endpoint(workspace_id: str, item_name: str, item_type: str, client) 
         raise RuntimeError(f"Error retrieving SQL endpoint: {e}") from e
 
 
-def exec_sql_query(
-    sql_endpoint: str, database_name: str, sql_query: str, notebookutils, timeout: int = 60
-) -> list:
+def exec_sql_query(sql_endpoint: str, database_name: str, sql_query: str, notebookutils, timeout: int = 60) -> list:
     """
     Execute a SQL query against a Fabric SQL endpoint.
 

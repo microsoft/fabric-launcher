@@ -89,10 +89,7 @@ class TestGetJobStatus:
         executor.client.get.return_value = mock_response
 
         with pytest.raises(Exception, match="Failed to get job status"):
-            executor.get_job_status(
-                notebook_id="notebook-id",
-                job_id="invalid-job-id"
-            )
+            executor.get_job_status(notebook_id="notebook-id", job_id="invalid-job-id")
 
     def test_get_job_status_uses_correct_url(self):
         """Test that get_job_status constructs correct API URL."""
@@ -113,10 +110,7 @@ class TestGetJobStatus:
         executor.client.get.return_value = mock_response
 
         with contextlib.suppress(Exception):
-            executor.get_job_status(
-                notebook_id="notebook-456",
-                job_id="job-789"
-            )
+            executor.get_job_status(notebook_id="notebook-456", job_id="job-789")
 
         # Verify the URL was constructed correctly
         call_args = executor.client.get.call_args
@@ -164,4 +158,3 @@ class TestRunNotebookSynchronous:
 
         assert hasattr(executor, "run_notebook_synchronous")
         assert callable(executor.run_notebook_synchronous)
-

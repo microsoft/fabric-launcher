@@ -50,7 +50,7 @@ class MockDataFrame:
                 return self._data[key]
             raise KeyError(key)
         # Boolean indexing - return filtered DataFrame
-        if hasattr(key, '__iter__'):
+        if hasattr(key, "__iter__"):
             return self._filter_by_mask(key)
         raise KeyError(key)
 
@@ -60,7 +60,7 @@ class MockDataFrame:
             return MockDataFrame({})
 
         # Convert mask to list if needed
-        mask_list = list(mask) if hasattr(mask, '__iter__') else [mask]
+        mask_list = list(mask) if hasattr(mask, "__iter__") else [mask]
 
         new_data = {}
         for col, values in self._data.items():
@@ -103,6 +103,7 @@ class MockSeries:
             return {}
         # Count occurrences of each value
         from collections import Counter
+
         return dict(Counter(self._data[self._key]))
 
 

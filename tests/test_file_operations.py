@@ -58,9 +58,7 @@ class TestUploadFilesToLakehouse:
 
         with pytest.raises(Exception, match="Lakehouse not found"):
             manager.upload_files_to_lakehouse(
-                lakehouse_name="NonExistent",
-                source_directory="/fake/path",
-                target_folder="data"
+                lakehouse_name="NonExistent", source_directory="/fake/path", target_folder="data"
             )
 
 
@@ -89,9 +87,7 @@ class TestUploadFileToLakehouse:
 
             # Execute
             manager.upload_file_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                file_path=str(test_file),
-                target_folder="data"
+                lakehouse_name="TestLakehouse", file_path=str(test_file), target_folder="data"
             )
 
             # Verify
@@ -104,9 +100,7 @@ class TestUploadFileToLakehouse:
 
         with pytest.raises(FileNotFoundError, match="File not found"):
             manager.upload_file_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                file_path="/nonexistent/file.json",
-                target_folder="data"
+                lakehouse_name="TestLakehouse", file_path="/nonexistent/file.json", target_folder="data"
             )
 
 
@@ -140,10 +134,7 @@ class TestCopyFolderToLakehouse:
 
             # Execute
             manager.copy_folder_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                source_folder=str(source_dir),
-                target_folder="data",
-                recursive=True
+                lakehouse_name="TestLakehouse", source_folder=str(source_dir), target_folder="data", recursive=True
             )
 
             # Verify
@@ -176,10 +167,7 @@ class TestCopyFolderToLakehouse:
 
             # Execute
             manager.copy_folder_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                source_folder=str(source_dir),
-                target_folder="data",
-                recursive=False
+                lakehouse_name="TestLakehouse", source_folder=str(source_dir), target_folder="data", recursive=False
             )
 
             # Only root level files should be copied (not subdir contents)
@@ -192,9 +180,7 @@ class TestCopyFolderToLakehouse:
 
         with pytest.raises(FileNotFoundError, match="Source folder not found"):
             manager.copy_folder_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                source_folder="/nonexistent/folder",
-                target_folder="data"
+                lakehouse_name="TestLakehouse", source_folder="/nonexistent/folder", target_folder="data"
             )
 
 
@@ -227,15 +213,9 @@ class TestCopyMultipleFoldersToLakehouse:
             (Path(temp_dir) / "Files" / "target2").mkdir(parents=True, exist_ok=True)
 
             # Execute
-            folder_mappings = {
-                str(folder1): "target1",
-                str(folder2): "target2"
-            }
+            folder_mappings = {str(folder1): "target1", str(folder2): "target2"}
 
-            manager.copy_multiple_folders_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                folder_mappings=folder_mappings
-            )
+            manager.copy_multiple_folders_to_lakehouse(lakehouse_name="TestLakehouse", folder_mappings=folder_mappings)
 
             # Verify mount was called multiple times
             assert mock_notebookutils.fs.mount.call_count == 2
@@ -263,14 +243,11 @@ class TestCopyMultipleFoldersToLakehouse:
             # Execute with one missing folder
             folder_mappings = {
                 str(folder1): "target1",
-                "/nonexistent/folder": "target2"  # This doesn't exist
+                "/nonexistent/folder": "target2",  # This doesn't exist
             }
 
             # Should not raise, just skip the missing folder
-            manager.copy_multiple_folders_to_lakehouse(
-                lakehouse_name="TestLakehouse",
-                folder_mappings=folder_mappings
-            )
+            manager.copy_multiple_folders_to_lakehouse(lakehouse_name="TestLakehouse", folder_mappings=folder_mappings)
 
 
 class TestDownloadAndCopyFoldersToLakehouse:
@@ -308,7 +285,7 @@ class TestDownloadAndCopyFoldersToLakehouse:
                 lakehouse_name="TestLakehouse",
                 github_downloader=mock_github_downloader,
                 repository_base_path=str(repo_base),
-                folder_mappings=folder_mappings
+                folder_mappings=folder_mappings,
             )
 
             # Verify
