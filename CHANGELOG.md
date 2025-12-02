@@ -8,14 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Python Version**: Updated minimum Python version to 3.10+ (required by `fabric-cicd` dependency)
 - **Dependencies**: Moved `semantic-link-sempy` to optional dependencies
   - This package is pre-installed in Fabric notebook environments
-  - Makes the package installable in CI/CD environments (Python 3.9+)
+  - Makes the package installable in CI/CD environments (Python 3.10+)
   - Added `[fabric]` extras group for explicit installation if needed
   - Tests use mocked versions of Fabric-specific dependencies
 
 ### Fixed
-- **CI/CD Compatibility**: Fixed installation issues in GitHub Actions for Python 3.9
+- **CI/CD Compatibility**: Fixed installation issues in GitHub Actions
 - **Testing**: Improved test infrastructure with better dependency mocking
 
 ## [0.3.0] - 2024-11-21

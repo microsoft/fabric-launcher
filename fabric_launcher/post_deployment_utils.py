@@ -32,7 +32,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -237,7 +237,7 @@ def create_or_update_fabric_item(
     workspace_id: str,
     client,
     endpoint: str,
-    logical_id_map: Optional[dict[str, str]] = None,
+    logical_id_map: dict[str, str] | None = None,
     description: str = "",
 ) -> str:
     """

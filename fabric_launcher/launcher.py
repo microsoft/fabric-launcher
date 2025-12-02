@@ -12,7 +12,7 @@ This is a wrapper around the fabric-cicd library designed for use in Fabric note
 __all__ = ["FabricLauncher"]
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .config_manager import DeploymentConfig
 from .deployment_report import DeploymentReport
@@ -65,8 +65,8 @@ class FabricLauncher:
         repo_name: str,
         config_file_path: str,
         branch: str = "main",
-        github_token: Optional[str] = None,
-        save_to: Optional[str] = None,
+        github_token: str | None = None,
+        save_to: str | None = None,
     ) -> str:
         """
         Download a configuration file from GitHub repository.
@@ -114,18 +114,18 @@ class FabricLauncher:
     def __init__(
         self,
         notebookutils,
-        workspace_id: Optional[str] = None,
+        workspace_id: str | None = None,
         environment: str = "DEV",
         api_root_url: str = "https://api.fabric.microsoft.com",
         debug: bool = False,
         allow_non_empty_workspace: bool = False,
         fix_zero_logical_ids: bool = True,
-        config_file: Optional[str] = None,
-        config_repo_owner: Optional[str] = None,
-        config_repo_name: Optional[str] = None,
-        config_file_path: Optional[str] = None,
+        config_file: str | None = None,
+        config_repo_owner: str | None = None,
+        config_repo_name: str | None = None,
+        config_file_path: str | None = None,
         config_branch: str = "main",
-        config_github_token: Optional[str] = None,
+        config_github_token: str | None = None,
     ):
         """
         Initialize the Fabric Launcher.
@@ -225,7 +225,7 @@ class FabricLauncher:
         return self._validator
 
     @property
-    def repository_path(self) -> Optional[str]:
+    def repository_path(self) -> str | None:
         """
         Get the path where the repository was extracted.
 
@@ -241,7 +241,7 @@ class FabricLauncher:
         return None
 
     @property
-    def workspace_directory(self) -> Optional[str]:
+    def workspace_directory(self) -> str | None:
         """
         Get the path to the workspace folder within the extracted repository.
 
@@ -260,7 +260,7 @@ class FabricLauncher:
         return None
 
     @property
-    def deployment_config(self) -> Optional[dict]:
+    def deployment_config(self) -> dict | None:
         """
         Get the current deployment configuration.
 
@@ -281,7 +281,7 @@ class FabricLauncher:
             }
         return None
 
-    def get_data_folder_path(self, folder_name: str) -> Optional[str]:
+    def get_data_folder_path(self, folder_name: str) -> str | None:
         """
         Get the full path to a data folder within the extracted repository.
 
@@ -332,7 +332,7 @@ class FabricLauncher:
         extract_to: str,
         branch: str = "main",
         folder_to_extract: str = "",
-        github_token: Optional[str] = None,
+        github_token: str | None = None,
         remove_folder_prefix: str = "",
     ) -> GitHubDownloader:
         """
@@ -363,8 +363,8 @@ class FabricLauncher:
     def deploy_artifacts(
         self,
         repository_directory: str,
-        item_types: Optional[list[str]] = None,
-        allow_non_empty_workspace: Optional[bool] = None,
+        item_types: list[str] | None = None,
+        allow_non_empty_workspace: bool | None = None,
     ) -> FabricDeployer:
         """
         Deploy Fabric artifacts to the workspace.
@@ -402,17 +402,17 @@ class FabricLauncher:
         repo_name: str = None,
         workspace_folder: str = "workspace",
         branch: str = "main",
-        github_token: Optional[str] = None,
-        extract_to: Optional[str] = None,
-        item_types: Optional[list[str]] = None,
-        item_type_stages: Optional[list[list[str]]] = None,
-        data_folders: Optional[dict[str, str]] = None,
-        lakehouse_name: Optional[str] = None,
-        data_file_patterns: Optional[list[str]] = None,
+        github_token: str | None = None,
+        extract_to: str | None = None,
+        item_types: list[str] | None = None,
+        item_type_stages: list[list[str]] | None = None,
+        data_folders: dict[str, str] | None = None,
+        lakehouse_name: str | None = None,
+        data_file_patterns: list[str] | None = None,
         validate_after_deployment: bool = True,
         generate_report: bool = True,
         max_retries: int = 3,
-        allow_non_empty_workspace: Optional[bool] = None,
+        allow_non_empty_workspace: bool | None = None,
     ):
         """
         Download from GitHub and deploy in one operation.
@@ -677,7 +677,7 @@ class FabricLauncher:
         lakehouse_name: str,
         source_directory: str,
         target_folder: str = "data",
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
     ) -> None:
         """
         Upload files from a local directory to Lakehouse Files area.
@@ -713,7 +713,7 @@ class FabricLauncher:
         lakehouse_name: str,
         source_folder: str,
         target_folder: str = "data",
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -739,7 +739,7 @@ class FabricLauncher:
         lakehouse_name: str,
         repository_base_path: str,
         folder_mappings: dict[str, str],
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -779,8 +779,8 @@ class FabricLauncher:
     def run_notebook(
         self,
         notebook_name: str,
-        parameters: Optional[dict[str, Any]] = None,
-        workspace_id: Optional[str] = None,
+        parameters: dict[str, Any] | None = None,
+        workspace_id: str | None = None,
         timeout_seconds: int = 3600,
     ) -> dict[str, Any]:
         """
@@ -803,7 +803,7 @@ class FabricLauncher:
         )
 
     def run_notebook_synchronous(
-        self, notebook_name: str, parameters: Optional[dict[str, Any]] = None, timeout_seconds: int = 3600
+        self, notebook_name: str, parameters: dict[str, Any] | None = None, timeout_seconds: int = 3600
     ) -> dict[str, Any]:
         """
         Run a notebook synchronously (blocks until completion).
@@ -820,9 +820,7 @@ class FabricLauncher:
             notebook_name=notebook_name, parameters=parameters, timeout_seconds=timeout_seconds
         )
 
-    def get_notebook_job_status(
-        self, notebook_id: str, job_id: str, workspace_id: Optional[str] = None
-    ) -> dict[str, Any]:
+    def get_notebook_job_status(self, notebook_id: str, job_id: str, workspace_id: str | None = None) -> dict[str, Any]:
         """
         Get the status of a notebook job.
 
@@ -840,8 +838,8 @@ class FabricLauncher:
         self,
         test_notebooks: bool = True,
         test_lakehouses: bool = True,
-        test_notebooks_list: Optional[list[str]] = None,
-        test_lakehouses_list: Optional[list[str]] = None,
+        test_notebooks_list: list[str] | None = None,
+        test_lakehouses_list: list[str] | None = None,
     ) -> dict[str, Any]:
         """
         Validate deployed items are accessible and functional.

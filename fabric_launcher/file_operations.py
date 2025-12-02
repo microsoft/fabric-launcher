@@ -15,7 +15,6 @@ Note on Resource Management:
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 __all__ = ["LakehouseFileManager"]
 
@@ -42,7 +41,7 @@ class LakehouseFileManager:
         lakehouse_name: str,
         source_directory: str,
         target_folder: str = "data",
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
     ) -> None:
         """
         Upload files from a local directory to a Lakehouse Files folder.
@@ -137,7 +136,7 @@ class LakehouseFileManager:
         lakehouse_name: str,
         source_folder: str,
         target_folder: str = "data",
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -235,7 +234,7 @@ class LakehouseFileManager:
         self,
         lakehouse_name: str,
         folder_mappings: dict[str, str],
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
         recursive: bool = True,
     ) -> None:
         """
@@ -280,7 +279,7 @@ class LakehouseFileManager:
         github_downloader,
         repository_base_path: str,
         folder_mappings: dict[str, str],
-        file_patterns: Optional[list[str]] = None,
+        file_patterns: list[str] | None = None,
         recursive: bool = True,
     ) -> None:
         """

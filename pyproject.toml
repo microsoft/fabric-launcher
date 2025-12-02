@@ -18,7 +18,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "fabric-cicd>=0.1.0",
     "azure-core>=1.26.0",
@@ -63,7 +63,7 @@ include = ["fabric_launcher*"]
 
 [tool.ruff]
 # Ruff configuration for linting and formatting
-target-version = "py39"
+target-version = "py310"
 line-length = 120
 
 # Enable specific rule sets

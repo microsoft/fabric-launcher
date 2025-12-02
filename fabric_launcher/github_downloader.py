@@ -10,7 +10,6 @@ import shutil
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 import requests
 
@@ -18,7 +17,7 @@ import requests
 class GitHubDownloader:
     """Handler for downloading and extracting GitHub repository content."""
 
-    def __init__(self, repo_owner: str, repo_name: str, branch: str = "main", github_token: Optional[str] = None):
+    def __init__(self, repo_owner: str, repo_name: str, branch: str = "main", github_token: str | None = None):
         """
         Initialize the GitHub downloader.
 

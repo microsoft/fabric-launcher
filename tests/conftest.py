@@ -64,7 +64,7 @@ class MockDataFrame:
 
         new_data = {}
         for col, values in self._data.items():
-            new_data[col] = [v for v, m in zip(values, mask_list) if m]
+            new_data[col] = [v for v, m in zip(values, mask_list, strict=False) if m]
 
         return MockDataFrame(new_data)
 

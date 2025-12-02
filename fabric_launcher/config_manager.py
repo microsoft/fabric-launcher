@@ -9,7 +9,7 @@ __all__ = ["DeploymentConfig"]
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import requests
 import yaml
@@ -25,12 +25,12 @@ class DeploymentConfig:
 
     def __init__(
         self,
-        config_path: Optional[str] = None,
-        repo_owner: Optional[str] = None,
-        repo_name: Optional[str] = None,
-        config_file_path: Optional[str] = None,
+        config_path: str | None = None,
+        repo_owner: str | None = None,
+        repo_name: str | None = None,
+        config_file_path: str | None = None,
         branch: str = "main",
-        github_token: Optional[str] = None,
+        github_token: str | None = None,
     ):
         """
         Initialize the configuration manager.
@@ -76,7 +76,7 @@ class DeploymentConfig:
             self.load_config(self.config_path)
 
     def _download_config_from_github(
-        self, repo_owner: str, repo_name: str, file_path: str, branch: str = "main", github_token: Optional[str] = None
+        self, repo_owner: str, repo_name: str, file_path: str, branch: str = "main", github_token: str | None = None
     ) -> str:
         """
         Download a configuration file from a GitHub repository.
@@ -176,7 +176,7 @@ class DeploymentConfig:
         except Exception as e:
             raise ValueError(f"Error loading configuration: {e}") from e
 
-    def get(self, key: str, default: Any = None, environment: Optional[str] = None) -> Any:
+    def get(self, key: str, default: Any = None, environment: str | None = None) -> Any:
         """
         Get a configuration value.
 
@@ -214,7 +214,7 @@ class DeploymentConfig:
 
         return value
 
-    def get_github_config(self, environment: Optional[str] = None) -> dict[str, Any]:
+    def get_github_config(self, environment: str | None = None) -> dict[str, Any]:
         """Get GitHub-specific configuration."""
         return {
             "repo_owner": self.get("github.repo_owner", environment=environment),
@@ -224,7 +224,7 @@ class DeploymentConfig:
             "workspace_folder": self.get("github.workspace_folder", "workspace", environment=environment),
         }
 
-    def get_deployment_config(self, environment: Optional[str] = None) -> dict[str, Any]:
+    def get_deployment_config(self, environment: str | None = None) -> dict[str, Any]:
         """Get deployment-specific configuration."""
         return {
             "environment": environment or self.get("deployment.environment", "DEV"),
@@ -235,7 +235,7 @@ class DeploymentConfig:
             "fix_zero_logical_ids": self.get("deployment.fix_zero_logical_ids", True, environment=environment),
         }
 
-    def get_data_config(self, environment: Optional[str] = None) -> dict[str, Any]:
+    def get_data_config(self, environment: str | None = None) -> dict[str, Any]:
         """Get data folder configuration."""
         return {
             "lakehouse_name": self.get("data.lakehouse_name", environment=environment),
@@ -243,7 +243,7 @@ class DeploymentConfig:
             "file_patterns": self.get("data.file_patterns", environment=environment),
         }
 
-    def get_notebook_config(self, environment: Optional[str] = None) -> dict[str, Any]:
+    def get_notebook_config(self, environment: str | None = None) -> dict[str, Any]:
         """Get post-deployment notebook configuration."""
         return {
             "notebook_name": self.get("post_deployment.notebook_name", environment=environment),
@@ -251,7 +251,7 @@ class DeploymentConfig:
             "timeout_seconds": self.get("post_deployment.timeout_seconds", 3600, environment=environment),
         }
 
-    def validate_required_fields(self, required_fields: list[str], environment: Optional[str] = None) -> list[str]:
+    def validate_required_fields(self, required_fields: list[str], environment: str | None = None) -> list[str]:
         """
         Validate that required configuration fields are present.
 

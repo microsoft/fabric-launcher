@@ -9,7 +9,7 @@ __all__ = ["FabricNotebookTokenCredential", "FabricDeployer"]
 import base64
 import json
 import time
-from typing import Any, Optional
+from typing import Any
 
 import fabric_cicd.constants
 from azure.core.credentials import AccessToken, TokenCredential
@@ -38,8 +38,8 @@ class FabricNotebookTokenCredential(TokenCredential):
     def get_token(
         self,
         *scopes: str,
-        claims: Optional[str] = None,
-        tenant_id: Optional[str] = None,
+        claims: str | None = None,
+        tenant_id: str | None = None,
         enable_cae: bool = False,
         **kwargs: Any,
     ) -> AccessToken:
@@ -272,7 +272,7 @@ class FabricDeployer:
             print(f"⚠️ Warning: Could not validate workspace contents: {e}")
             print("Proceeding with deployment...")
 
-    def deploy_items(self, item_types: Optional[list[str]] = None) -> None:
+    def deploy_items(self, item_types: list[str] | None = None) -> None:
         """
         Deploy Fabric items to the workspace.
 

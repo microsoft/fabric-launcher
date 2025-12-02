@@ -184,7 +184,7 @@ See [tests/README.md](tests/README.md) for detailed testing documentation.
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+
 - Access to Microsoft Fabric workspace
 - Running within a Fabric Python notebook (for `notebookutils` access)
 

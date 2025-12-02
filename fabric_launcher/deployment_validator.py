@@ -8,7 +8,7 @@ __all__ = ["DeploymentValidator"]
 
 import time
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 
 class DeploymentValidator:
@@ -31,7 +31,7 @@ class DeploymentValidator:
         self.validation_results: dict[str, Any] = {}
 
     def validate_deployment(
-        self, expected_items: Optional[list[dict[str, str]]] = None, check_accessibility: bool = True
+        self, expected_items: list[dict[str, str]] | None = None, check_accessibility: bool = True
     ) -> dict[str, Any]:
         """
         Validate that deployment was successful.

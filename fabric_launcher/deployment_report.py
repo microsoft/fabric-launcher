@@ -8,7 +8,7 @@ __all__ = ["DeploymentReport"]
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class DeploymentReport:
@@ -70,7 +70,7 @@ class DeploymentReport:
         # Calculate current duration if deployment hasn't ended
         return round((datetime.now() - self.start_time).total_seconds(), 2)
 
-    def add_step(self, step_name: str, status: str, details: Optional[str] = None) -> None:
+    def add_step(self, step_name: str, status: str, details: str | None = None) -> None:
         """
         Add a deployment step to the report.
 
@@ -133,7 +133,7 @@ class DeploymentReport:
             {"notebook": notebook_name, "job_id": job_id, "status": status, "timestamp": datetime.now().isoformat()}
         )
 
-    def add_error(self, error: str, step: Optional[str] = None) -> None:
+    def add_error(self, error: str, step: str | None = None) -> None:
         """
         Add an error to the report.
 
@@ -143,7 +143,7 @@ class DeploymentReport:
         """
         self.report_data["errors"].append({"message": error, "step": step, "timestamp": datetime.now().isoformat()})
 
-    def add_warning(self, warning: str, step: Optional[str] = None) -> None:
+    def add_warning(self, warning: str, step: str | None = None) -> None:
         """
         Add a warning to the report.
 
@@ -252,7 +252,7 @@ class DeploymentReport:
         """
         return self.report_data.copy()
 
-    def save_report(self, output_path: Optional[str] = None, format: str = "json") -> str:
+    def save_report(self, output_path: str | None = None, format: str = "json") -> str:
         """
         Save the deployment report to a file.
 
