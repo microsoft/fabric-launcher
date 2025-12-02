@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **Python Version**: Updated minimum Python version to 3.10+ (required by `fabric-cicd` dependency)
+- **Python Version**: Requires Python 3.10-3.12 (matching `fabric-cicd` dependency constraints)
 - **Dependencies**: Moved `semantic-link-sempy` to optional dependencies
   - This package is pre-installed in Fabric notebook environments
   - Makes the package installable in CI/CD environments (Python 3.10+)

@@ -7,8 +7,6 @@ __all__ = ["NotebookExecutor"]
 
 from typing import Any
 
-import sempy.fabric as fabric
-
 
 class NotebookExecutor:
     """
@@ -25,6 +23,8 @@ class NotebookExecutor:
         Args:
             notebookutils: The notebookutils module from Fabric notebook environment
         """
+        import sempy.fabric as fabric
+
         self.notebookutils = notebookutils
         self.client = fabric.FabricRestClient()
         self.workspace_id = fabric.get_workspace_id()
@@ -51,6 +51,8 @@ class NotebookExecutor:
         Raises:
             Exception: If notebook execution fails
         """
+        import sempy.fabric as fabric
+
         try:
             target_workspace_id = workspace_id or self.workspace_id
 

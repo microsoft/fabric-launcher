@@ -184,7 +184,7 @@ See [tests/README.md](tests/README.md) for detailed testing documentation.
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.10, 3.11, or 3.12 (compatible with fabric-cicd dependency)
 - Access to Microsoft Fabric workspace
 - Running within a Fabric Python notebook (for `notebookutils` access)
 
