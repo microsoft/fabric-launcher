@@ -1,0 +1,11 @@
+# Development dependencies for fabric-launcher
+# 
+# NOTE: This file is maintained for backward compatibility.
+# Preferred method: pip install -e ".[dev]"
+#
+# For specific use cases:
+# - Testing only: pip install -e ".[test]"
+# - All dev dependencies: pip install -e ".[dev]"
+
+# All dev dependencies (defined in pyproject.toml)
+-e .[dev]
