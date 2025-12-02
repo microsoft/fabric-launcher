@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Dependencies**: Moved `semantic-link-sempy` to optional dependencies
+  - This package is pre-installed in Fabric notebook environments
+  - Makes the package installable in CI/CD environments (Python 3.9+)
+  - Added `[fabric]` extras group for explicit installation if needed
+  - Tests use mocked versions of Fabric-specific dependencies
+
+### Fixed
+- **CI/CD Compatibility**: Fixed installation issues in GitHub Actions for Python 3.9
+- **Testing**: Improved test infrastructure with better dependency mocking
+
 ## [0.3.0] - 2024-11-21
 
 ### Added - Advanced Features

@@ -188,6 +188,8 @@ See [tests/README.md](tests/README.md) for detailed testing documentation.
 - Access to Microsoft Fabric workspace
 - Running within a Fabric Python notebook (for `notebookutils` access)
 
+**Note**: `semantic-link-sempy` is a runtime dependency that is pre-installed in Fabric notebook environments. For local development or testing outside of Fabric, the package uses mocked versions of these dependencies.
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
