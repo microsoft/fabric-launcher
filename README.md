@@ -1,4 +1,7 @@
-# 🚀 fabric-launcher
+  <p align="center">
+  <img src="./docs/Fabric-Launcher.png" alt="Fabric Launcher icon" width="200"/>
+</p>
+
 </p>
 <p align="center">
 <a href="https://badgen.net/github/license/microsoft/fabric-launcher" target="_blank">
@@ -26,6 +29,9 @@
 </p>
 
 ---
+
+# Fabric Launcher: From repo to workspace, Deploy Fabric solutions effortlessly
+
 A Python library to automate deployment of Microsoft Fabric solutions from GitHub repositories into Fabric workspaces. Fabric-launcher is designed to run within Fabric notebooks. It is ideal for simple, automated deployment for solution accelerators, demos, tutorials, and samples.
 
 **fabric-launcher** is a wrapper around [fabric-cicd](https://github.com/microsoft/fabriccicd) and supports all Fabric item types that fabric-cicd supports.
