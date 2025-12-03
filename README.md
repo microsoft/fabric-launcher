@@ -1,5 +1,31 @@
 # 🚀 fabric-launcher
+</p>
+<p align="center">
+<a href="https://badgen.net/github/license/microsoft/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/github/license/microsoft/fabric-launcher" alt="license">
+</a>
+<a href="https://badgen.net/github/releases/microsoft/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/github/releases/microsoft/fabric-launcher" alt="releases">
+</a>
+<a href="https://badgen.net/github/contributors/microsoft/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/github/contributors/microsoft/fabric-launcher" alt="contributors">
+</a>
+<a href="https://badgen.net/github/commits/microsoft/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/github/commits/microsoft/fabric-launcher" alt="commits">
+</a>
+<a href="https://badgen.net/pypi/v/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/pypi/v/fabric-launcher" alt="Package version">
+</a>
+  <a href="https://badgen.net/pypi/dm/fabric-launcher" target="_blank">
+    <img src="https://badgen.net/pypi/dm/fabric-launcher" alt="Monthly Downloads">
+</a>
+</a>
+  <a href="https://badge.socket.dev/pypi/package/fabric-launcher?artifact_id=tar-gz" target="_blank">
+    <img src="https://badge.socket.dev/pypi/package/fabric-launcher?artifact_id=tar-gz" alt="Socket Badge">
+</a>
+</p>
 
+---
 A Python library to automate deployment of Microsoft Fabric solutions from GitHub repositories into Fabric workspaces. Fabric-launcher is designed to run within Fabric notebooks. It is ideal for simple, automated deployment for solution accelerators, demos, tutorials, and samples.
 
 **fabric-launcher** is a wrapper around [fabric-cicd](https://github.com/microsoft/fabriccicd) and supports all Fabric item types that fabric-cicd supports.
