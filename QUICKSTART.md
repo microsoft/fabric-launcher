@@ -35,7 +35,8 @@ launcher.download_and_deploy(
     data_folders={"data": "ref-data"},     # Optional: copy to Lakehouse
     lakehouse_name="DataLH",               # Required if data_folders used
     validate_after_deployment=True,        # Optional: validate items
-    generate_report=True                   # Optional: create report
+    generate_report=True,                  # Optional: create report
+    deployment_retries=2                   # Optional: retries per stage on failure
 )
 ```
 
@@ -58,7 +59,8 @@ Deploy from local directory.
 ```python
 launcher.deploy_artifacts(
     repository_directory="./workspace",
-    item_types=["Lakehouse", "Notebook"]  # Optional: filter types
+    item_types=["Lakehouse", "Notebook"],  # Optional: filter types
+    deployment_retries=2                   # Optional: retries on failure
 )
 ```
 
@@ -137,7 +139,7 @@ github:
 
 deployment:
   validate_after_deployment: true
-  max_retries: 3
+  deployment_retries: 2  # Retries per stage on transient errors
 
 data:
   lakehouse_name: DataLH
@@ -147,7 +149,7 @@ data:
 environments:
   PROD:
     deployment:
-      max_retries: 5
+      deployment_retries: 3
 ```
 
 ## Item Types

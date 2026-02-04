@@ -294,7 +294,7 @@ class TestFabricLauncherDownloadAndDeploy(unittest.TestCase):
         mock_downloader_instance = Mock()
         mock_downloader_class.return_value = mock_downloader_instance
 
-        # Mock deployer
+        # Mock deployer - each stage creates a new instance
         mock_deployer_instance = Mock()
         mock_deployer_class.return_value = mock_deployer_instance
 
@@ -317,8 +317,8 @@ class TestFabricLauncherDownloadAndDeploy(unittest.TestCase):
                 generate_report=True,
             )
 
-            # Verify deployer was created
-            mock_deployer_class.assert_called_once()
+            # Verify deployer was created once per stage (3 stages = 3 calls)
+            self.assertEqual(mock_deployer_class.call_count, 3)
 
             # Verify deploy_items was called 3 times (once per stage)
             self.assertEqual(mock_deployer_instance.deploy_items.call_count, 3)

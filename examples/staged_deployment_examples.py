@@ -184,7 +184,7 @@ def example_environment_based_staging():
             ],
             validate_after_deployment=True,
             generate_report=True,
-            max_retries=5,
+            deployment_retries=3,
         )
         print("✅ PROD: Multi-stage deployment with full validation completed")
 

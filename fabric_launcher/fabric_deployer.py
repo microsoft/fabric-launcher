@@ -8,7 +8,6 @@ __all__ = ["FabricNotebookTokenCredential", "FabricDeployer"]
 
 import base64
 import json
-import time
 from typing import Any
 
 import fabric_cicd.constants
@@ -149,69 +148,6 @@ class FabricDeployer:
             repository_directory=repository_directory,
             token_credential=self.token_credential,
         )
-
-    @staticmethod
-    def _retry_on_failure(func, max_retries: int = 3, delay_seconds: int = 5, operation_name: str = "Operation"):
-        """
-        Retry a function on failure with exponential backoff.
-
-        Args:
-            func: Function to retry
-            max_retries: Maximum number of retry attempts
-            delay_seconds: Initial delay between retries (doubles each time)
-            operation_name: Name of operation for error messages
-
-        Returns:
-            Function result if successful
-
-        Raises:
-            Exception: If all retries fail
-        """
-        last_exception = None
-
-        for attempt in range(max_retries):
-            try:
-                return func()
-            except Exception as e:
-                last_exception = e
-
-                if attempt < max_retries - 1:
-                    wait_time = delay_seconds * (2**attempt)
-                    print(f"⚠️ {operation_name} failed (attempt {attempt + 1}/{max_retries}): {str(e)}")
-                    print(f"⏳ Retrying in {wait_time} seconds...")
-                    time.sleep(wait_time)
-                else:
-                    print(f"❌ {operation_name} failed after {max_retries} attempts")
-
-        # All retries failed
-        error_msg = f"{operation_name} failed after {max_retries} attempts. Last error: {str(last_exception)}"
-
-        # Provide helpful suggestions based on error type
-        suggestions = []
-        error_str = str(last_exception).lower()
-
-        if "unauthorized" in error_str or "403" in error_str:
-            suggestions.append("Check workspace permissions - you need Member or Admin role")
-            suggestions.append("Verify your authentication token is valid")
-        elif "not found" in error_str or "404" in error_str:
-            suggestions.append("Verify the workspace ID is correct")
-            suggestions.append("Check that all referenced items exist")
-        elif "timeout" in error_str or "timed out" in error_str:
-            suggestions.append("The operation may take longer - try increasing timeout")
-            suggestions.append("Check your network connection")
-        elif "already exists" in error_str or "conflict" in error_str or "409" in error_str:
-            suggestions.append("An item with this name already exists")
-            suggestions.append("Consider using allow_non_empty_workspace=True if intentional")
-        elif "capacity" in error_str:
-            suggestions.append("Check that your Fabric capacity is running")
-            suggestions.append("Verify capacity has sufficient resources")
-
-        if suggestions:
-            error_msg += "\n\n💡 Suggestions:\n"
-            for suggestion in suggestions:
-                error_msg += f"  • {suggestion}\n"
-
-        raise Exception(error_msg)
 
     def _validate_workspace_is_empty(self) -> None:
         """

@@ -25,9 +25,9 @@ class TestDeploymentConfig(unittest.TestCase):
                 "branch": "main",
                 "workspace_folder": "workspace",
             },
-            "deployment": {"staged_deployment": True, "validate_after_deployment": True, "max_retries": 3},
+            "deployment": {"staged_deployment": True, "validate_after_deployment": True, "deployment_retries": 2},
             "data": {"lakehouse_name": "TestLH", "folder_mappings": {"data": "reference-data"}},
-            "environments": {"DEV": {"github": {"branch": "dev"}}, "PROD": {"deployment": {"max_retries": 5}}},
+            "environments": {"DEV": {"github": {"branch": "dev"}}, "PROD": {"deployment": {"deployment_retries": 3}}},
         }
 
     def test_load_yaml_config(self):
@@ -41,7 +41,7 @@ class TestDeploymentConfig(unittest.TestCase):
 
             loaded_config = config.load_config(config_path)
             self.assertEqual(loaded_config["github"]["repo_owner"], "test-org")
-            self.assertEqual(loaded_config["deployment"]["max_retries"], 3)
+            self.assertEqual(loaded_config["deployment"]["deployment_retries"], 2)
         finally:
             Path(config_path).unlink()
 
@@ -56,7 +56,7 @@ class TestDeploymentConfig(unittest.TestCase):
 
             loaded_config = config.load_config(config_path)
             self.assertEqual(loaded_config["github"]["repo_owner"], "test-org")
-            self.assertEqual(loaded_config["deployment"]["max_retries"], 3)
+            self.assertEqual(loaded_config["deployment"]["deployment_retries"], 2)
         finally:
             Path(config_path).unlink()
 
