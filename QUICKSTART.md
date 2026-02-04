@@ -137,7 +137,7 @@ github:
 
 deployment:
   validate_after_deployment: true
-  max_retries: 3
+  deployment_retries: 3
 
 data:
   lakehouse_name: DataLH
@@ -147,7 +147,7 @@ data:
 environments:
   PROD:
     deployment:
-      max_retries: 5
+      deployment_retries: 5
 ```
 
 ## Item Types

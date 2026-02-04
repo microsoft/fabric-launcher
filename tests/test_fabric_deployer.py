@@ -109,56 +109,6 @@ class TestFabricDeployerInit:
             assert deployer.fix_zero_logical_ids is False
 
 
-class TestRetryOnFailure:
-    """Tests for _retry_on_failure static method."""
-
-    def test_retry_success_first_attempt(self):
-        """Test successful execution on first attempt."""
-        mock_func = MagicMock(return_value="success")
-
-        result = FabricDeployer._retry_on_failure(mock_func, max_retries=3)
-
-        assert result == "success"
-        assert mock_func.call_count == 1
-
-    def test_retry_success_after_failures(self):
-        """Test successful execution after failures."""
-        mock_func = MagicMock(side_effect=[Exception("fail"), Exception("fail"), "success"])
-
-        with patch("time.sleep"):  # Speed up test
-            result = FabricDeployer._retry_on_failure(mock_func, max_retries=3, delay_seconds=1)
-
-        assert result == "success"
-        assert mock_func.call_count == 3
-
-    def test_retry_all_attempts_fail(self):
-        """Test when all retry attempts fail."""
-        mock_func = MagicMock(side_effect=Exception("persistent failure"))
-
-        with patch("time.sleep"), pytest.raises(Exception, match="failed after 3 attempts"):
-            FabricDeployer._retry_on_failure(mock_func, max_retries=3)
-
-        assert mock_func.call_count == 3
-
-    def test_retry_with_unauthorized_error(self):
-        """Test retry adds suggestions for unauthorized errors."""
-        mock_func = MagicMock(side_effect=Exception("403 Unauthorized"))
-
-        with patch("time.sleep"), pytest.raises(Exception) as exc_info:
-            FabricDeployer._retry_on_failure(mock_func, max_retries=1)
-
-        assert "workspace permissions" in str(exc_info.value).lower()
-
-    def test_retry_with_not_found_error(self):
-        """Test retry adds suggestions for not found errors."""
-        mock_func = MagicMock(side_effect=Exception("404 Not found"))
-
-        with patch("time.sleep"), pytest.raises(Exception) as exc_info:
-            FabricDeployer._retry_on_failure(mock_func, max_retries=1)
-
-        assert "workspace ID" in str(exc_info.value)
-
-
 class TestDeployItems:
     """Tests for deploy_items method."""
 

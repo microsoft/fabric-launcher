@@ -11,7 +11,7 @@ from GitHub repositories. It orchestrates:
 Designed to be used within Fabric Python notebooks with notebookutils available.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from .config_manager import DeploymentConfig
 from .deployment_report import DeploymentReport

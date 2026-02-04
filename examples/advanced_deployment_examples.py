@@ -60,7 +60,7 @@ def production_deployment_workflow():
     downloader, deployer, report = launcher.download_and_deploy(
         # All parameters come from config file, but can be overridden here if needed
         # validate_after_deployment=True,  # Override config setting if needed
-        # max_retries=5  # Override config setting if needed
+        # deployment_retries=5  # Override config setting if needed
     )
 
     print("\n" + "=" * 70)
@@ -152,7 +152,7 @@ def multi_environment_single_config():
         github:
           branch: main
         deployment:
-          max_retries: 5
+          deployment_retries: 5
           validate_after_deployment: true
     """
 
@@ -246,7 +246,7 @@ def config_with_parameter_overrides():
         # Override config file settings for this specific deployment
         branch="hotfix-branch",  # Deploy from different branch
         validate_after_deployment=True,  # Force validation
-        max_retries=10,  # More retries for this deployment
+        deployment_retries=10,  # More retries for this deployment
         lakehouse_name="CustomLakehouse",  # Use different lakehouse
     )
 

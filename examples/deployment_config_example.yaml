@@ -17,7 +17,7 @@ github:
 deployment:
   staged_deployment: true  # Deploy data stores first, then compute items
   validate_after_deployment: true  # Run post-deployment validation
-  max_retries: 3  # Number of retry attempts for failed operations
+  deployment_retries: 2  # Number of retry attempts on deployment failure
   item_types: null  # Optional: specific item types to deploy (null = all)
     # Examples (supports all fabric-cicd item types):
     # - Lakehouse
@@ -65,7 +65,7 @@ environments:
     deployment:
       staged_deployment: true
       validate_after_deployment: true
-      max_retries: 3
+      deployment_retries: 3
     data:
       lakehouse_name: TestDataLH
   
@@ -76,7 +76,7 @@ environments:
     deployment:
       staged_deployment: true
       validate_after_deployment: true
-      max_retries: 5  # More retries in production
+      deployment_retries: 5  # More retries in production
     data:
       lakehouse_name: ProdDataLH
       file_patterns:

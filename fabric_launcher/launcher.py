@@ -224,6 +224,44 @@ class FabricLauncher:
             self._validator = DeploymentValidator(workspace_id=self.workspace_id, notebookutils=self.notebookutils)
         return self._validator
 
+    def _deploy_with_retry(
+        self,
+        deployer: FabricDeployer,
+        item_types: list[str] | None,
+        retries_remaining: int,
+        stage_description: str = "Deployment",
+    ) -> None:
+        """
+        Deploy items with automatic retry on failure.
+
+        On retry, automatically sets allow_non_empty_workspace=True since previous
+        attempt may have deployed some items before failing.
+
+        Args:
+            deployer: FabricDeployer instance to use for deployment
+            item_types: List of item types to deploy (None for all)
+            retries_remaining: Number of retries remaining (0 = no retries)
+            stage_description: Description for logging (e.g., "Stage 1: Lakehouses")
+        """
+        import time
+
+        try:
+            deployer.deploy_items(item_types)
+        except Exception as e:
+            if retries_remaining > 0:
+                print(f"\n⚠️ {stage_description} failed: {str(e)}")
+                print(f"🔄 Retrying in 10 seconds... ({retries_remaining} retries remaining)")
+                time.sleep(10)
+
+                # On retry, allow non-empty workspace since previous attempt may have deployed items
+                deployer.allow_non_empty_workspace = True
+                deployer._deployment_session_started = True  # Skip workspace validation on retry
+
+                self._deploy_with_retry(deployer, item_types, retries_remaining - 1, stage_description)
+            else:
+                # No retries remaining, re-raise the exception
+                raise
+
     @property
     def repository_path(self) -> str | None:
         """
@@ -365,6 +403,7 @@ class FabricLauncher:
         repository_directory: str,
         item_types: list[str] | None = None,
         allow_non_empty_workspace: bool | None = None,
+        deployment_retries: int = 2,
     ) -> FabricDeployer:
         """
         Deploy Fabric artifacts to the workspace.
@@ -374,6 +413,8 @@ class FabricLauncher:
             item_types: List of item types to deploy (None for all)
             allow_non_empty_workspace: Allow deployment to workspaces with existing items
                                        (None uses instance setting from __init__)
+            deployment_retries: Number of retry attempts on deployment failure (default: 2).
+                               On retry, automatically sets allow_non_empty_workspace=True.
 
         Returns:
             FabricDeployer instance for further operations
@@ -393,7 +434,12 @@ class FabricLauncher:
             fix_zero_logical_ids=self.fix_zero_logical_ids,
         )
 
-        self._fabric_deployer.deploy_items(item_types)
+        self._deploy_with_retry(
+            deployer=self._fabric_deployer,
+            item_types=item_types,
+            retries_remaining=deployment_retries,
+            stage_description="Deployment",
+        )
         return self._fabric_deployer
 
     def download_and_deploy(
@@ -411,7 +457,7 @@ class FabricLauncher:
         data_file_patterns: list[str] | None = None,
         validate_after_deployment: bool = True,
         generate_report: bool = True,
-        max_retries: int = 3,
+        deployment_retries: int = 2,
         allow_non_empty_workspace: bool | None = None,
     ):
         """
@@ -438,7 +484,9 @@ class FabricLauncher:
             data_file_patterns: Optional file patterns for data upload (e.g., ["*.json", "*.csv"])
             validate_after_deployment: Run post-deployment validation
             generate_report: Generate and display deployment report
-            max_retries: Maximum retry attempts for failed operations
+            deployment_retries: Number of retry attempts on deployment failure (default: 2).
+                               On retry, automatically sets allow_non_empty_workspace=True
+                               since previous attempt may have deployed some items.
             allow_non_empty_workspace: Allow deployment to workspaces with existing items
                                        (None uses instance setting from __init__)
 
@@ -489,7 +537,7 @@ class FabricLauncher:
             deploy_cfg = self.config.get_deployment_config()
             item_types = item_types or deploy_cfg.get("item_types")
             validate_after_deployment = deploy_cfg.get("validate_after_deployment", validate_after_deployment)
-            max_retries = deploy_cfg.get("max_retries", max_retries)
+            deployment_retries = deploy_cfg.get("deployment_retries", deployment_retries)
             if allow_non_empty_workspace is None:
                 allow_non_empty_workspace = deploy_cfg.get("allow_non_empty_workspace", self.allow_non_empty_workspace)
 
@@ -561,10 +609,16 @@ class FabricLauncher:
                     fix_zero_logical_ids=self.fix_zero_logical_ids,
                 )
 
-                # Deploy each stage
+                # Deploy each stage with retry logic
                 for stage_num, stage_item_types in enumerate(item_type_stages, 1):
-                    print(f"\n  📦 Stage {stage_num}/{len(item_type_stages)}: {', '.join(stage_item_types)}")
-                    self._fabric_deployer.deploy_items(stage_item_types)
+                    stage_description = f"Stage {stage_num}/{len(item_type_stages)}: {', '.join(stage_item_types)}"
+                    print(f"\n  📦 {stage_description}")
+                    self._deploy_with_retry(
+                        deployer=self._fabric_deployer,
+                        item_types=stage_item_types,
+                        retries_remaining=deployment_retries,
+                        stage_description=stage_description,
+                    )
 
                 deployer = self._fabric_deployer
                 print(f"\n✅ All {len(item_type_stages)} deployment stages completed")
@@ -574,6 +628,7 @@ class FabricLauncher:
                     repository_directory=repository_directory,
                     item_types=item_types,
                     allow_non_empty_workspace=allow_non_empty_workspace,
+                    deployment_retries=deployment_retries,
                 )
 
             if report:
