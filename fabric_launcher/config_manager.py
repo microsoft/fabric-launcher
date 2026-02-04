@@ -312,6 +312,7 @@ class DeploymentConfig:
                 "allow_non_empty_workspace": False,
                 "fix_zero_logical_ids": True,  # Replace zero GUIDs with unique identifiers
                 "item_types": None,  # None = deploy all types
+                "deployment_retries": 2,  # Number of retry attempts on failure
             },
             "data": {
                 "lakehouse_name": "DataLH",

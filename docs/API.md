@@ -52,7 +52,9 @@ download_and_deploy(
     data_folders: Optional[Dict[str, str]] = None,
     lakehouse_name: Optional[str] = None,
     validate_after_deployment: bool = False,
-    generate_report: bool = False
+    generate_report: bool = False,
+    deployment_retries: int = 2,
+    allow_non_empty_workspace: Optional[bool] = None
 ) -> dict
 ```
 
@@ -67,6 +69,8 @@ download_and_deploy(
 - `lakehouse_name`: Lakehouse name for data uploads
 - `validate_after_deployment`: Run post-deployment validation
 - `generate_report`: Generate deployment report
+- `deployment_retries`: Number of retry attempts on failure (default: 2)
+- `allow_non_empty_workspace`: Allow deployment to non-empty workspaces
 
 **Returns:** Dictionary with deployment results
 
@@ -101,14 +105,16 @@ Deploy Fabric artifacts from local directory.
 deploy_artifacts(
     repository_directory: str,
     item_types: Optional[List[str]] = None,
-    item_type_stages: Optional[List[List[str]]] = None
+    allow_non_empty_workspace: Optional[bool] = None,
+    deployment_retries: int = 2
 ) -> dict
 ```
 
 **Parameters:**
 - `repository_directory`: Path to directory containing Fabric items
 - `item_types`: List of item types to deploy
-- `item_type_stages`: List of lists for staged deployment
+- `allow_non_empty_workspace`: Allow deployment to non-empty workspaces
+- `deployment_retries`: Number of retry attempts on failure (default: 2)
 
 **Returns:** Dictionary with deployment results
 

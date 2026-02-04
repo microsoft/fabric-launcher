@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-04
+
+### Added
+- **Automatic Deployment Retries**: Robust retry logic for transient deployment failures
+  - New `deployment_retries` parameter (default: 2) for `deploy_artifacts()` and `download_and_deploy()`
+  - Per-stage retry logic for multi-stage deployments
+  - 10-second delay between retry attempts to allow service recovery
+  - Automatic `allow_non_empty_workspace=True` on retries (since previous attempt may have deployed items)
+  - Clear logging messages indicating retry attempts and remaining retries
+  - Configurable via YAML/JSON config files (`deployment.deployment_retries`)
+
+### Changed
+- Refactored retry logic into `_deploy_with_retry()` helper method for code reuse
+- Updated documentation to reflect new retry behavior and parameters
+
+### Removed
+- Removed unused `max_retries` parameter from `download_and_deploy()`
+- Removed unused `_retry_on_failure()` static method from `FabricDeployer`
+
+### Fixed
+- Fixed API documentation for `deploy_artifacts()` (removed incorrect `item_type_stages` parameter, added missing `allow_non_empty_workspace` parameter)
+
+## [0.3.1] - Unreleased
+
 ### Changed
 - **Python Version**: Requires Python 3.10-3.12 (matching `fabric-cicd` dependency constraints)
 - **Dependencies**: Moved `semantic-link-sempy` to optional dependencies
@@ -45,11 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - JSON report export for audit trails
   - Summary report printing with duration metrics
 
-- **Retry Logic**: Automatic retry with exponential backoff
-  - Configurable retry attempts via `max_retries` parameter
-  - Exponential backoff delay between retries
-  - Retry for download, deployment, and data upload operations
-  - Detailed logging of retry attempts
+- **Retry Logic**: Basic retry mechanism (deprecated in 0.4.0)
+  - Initial retry implementation with exponential backoff
+  - Note: Replaced by `deployment_retries` parameter in 0.4.0
 
 - **Enhanced Error Messages**: Actionable error messages with suggestions
   - Context-aware error suggestions based on error type

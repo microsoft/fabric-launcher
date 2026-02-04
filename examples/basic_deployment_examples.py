@@ -98,7 +98,7 @@ def example_validated_deployment():
         workspace_folder="workspace",
         validate_after_deployment=True,  # Run post-deployment validation
         generate_report=True,  # Generate deployment report
-        max_retries=3,  # Retry failed operations up to 3 times
+        deployment_retries=3,  # Retry failed deployments up to 3 times
     )
 
     # The report is automatically printed and saved
@@ -170,7 +170,7 @@ def example_multi_environment_config():
 
     deployment:
       validate_after_deployment: true
-      max_retries: 3
+      deployment_retries: 3
 
     data:
       lakehouse_name: DataLH
@@ -197,7 +197,7 @@ def example_multi_environment_config():
       PROD:
         deployment:
           validate_after_deployment: true
-          max_retries: 5
+          deployment_retries: 5
         allow_non_empty_workspace: false
     """
 
@@ -229,7 +229,7 @@ def example_retry_and_error_handling():
             repo_owner="myorg",
             repo_name="my-solution",
             workspace_folder="workspace",
-            max_retries=5,  # Retry up to 5 times on failure
+            deployment_retries=5,  # Retry up to 5 times on failure
             generate_report=True,
         )
 
