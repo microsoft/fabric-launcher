@@ -1,5 +1,5 @@
   <p align="center">
-  <img src="./docs/Fabric-Launcher.png" alt="Fabric Launcher icon" width="200"/>
+  <img src="/docs/Fabric-Launcher.png" alt="Fabric Launcher icon" width="200"/>
 </p>
 
 </p>
@@ -23,8 +23,8 @@
     <img src="https://badgen.net/pypi/dm/fabric-launcher" alt="Monthly Downloads">
 </a>
 </a>
-  <a href="https://badge.socket.dev/pypi/package/fabric-launcher?artifact_id=tar-gz" target="_blank">
-    <img src="https://badge.socket.dev/pypi/package/fabric-launcher?artifact_id=tar-gz" alt="Socket Badge">
+  <a href="https://badge.socket.dev/pypi/package/fabric-launcher" target="_blank">
+    <img src="https://badge.socket.dev/pypi/package/fabric-launcher" alt="Socket Badge">
 </a>
 </p>
 
