@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-05
+
+### Changed
+- **CI/CD**: Simplified GitHub Actions test workflow
+  - Tests now run only on `ubuntu-latest` with Python 3.11
+  - Removed matrix strategy (previously 9 combinations: 3 OS × 3 Python versions)
+  - Faster CI runs and reduced compute costs
+- **README**: Updated image links in the document.
+
 ## [0.4.0] - 2026-02-04
 
 ### Added
